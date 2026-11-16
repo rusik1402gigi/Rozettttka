@@ -1,0 +1,19 @@
+{
+  "name": "socket-simulator",
+  "version": "1.0.0",
+  "description": "Симулятор розетки — интерактивная игра и симулятор электрика для iOS и Web",
+  "main": "index.html",
+  "scripts": {
+    "sync": "npx cap sync",
+    "ios": "npx cap add ios && npx cap sync ios",
+    "android": "npx cap add android && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2",
+    "@capacitor/android": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

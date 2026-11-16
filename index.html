@@ -1,0 +1,2632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Симулятор розетки" />
+  <meta name="theme-color" content="#141824" />
+  <title>Симулятор розетки 220В</title>
+  <style>
+    :root {
+      --safe-top: env(safe-area-inset-top, 12px);
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
+      --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --transition: 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* ================= THEME 1: REALISM (APARTMENT WALL) ================= */
+    body[data-theme="realism"] {
+      --bg-primary: #d9cfc1;
+      --bg-pattern: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0.14) 0px,
+        rgba(255,255,255,0.14) 18px,
+        rgba(0,0,0,0.03) 18px,
+        rgba(0,0,0,0.03) 36px
+      );
+      --surface: rgba(255, 252, 247, 0.88);
+      --surface-solid: #fcf8f2;
+      --surface-border: rgba(120, 100, 80, 0.22);
+      --text-main: #2a241e;
+      --text-muted: #6e6256;
+      --accent: #e06d1b;
+      --accent-glow: rgba(224, 109, 27, 0.35);
+      --danger: #d92b2b;
+      --success: #238c47;
+      --socket-plate: linear-gradient(145deg, #ffffff, #e6dfd5);
+      --socket-well: radial-gradient(circle at 35% 35%, #e5ded3, #c4bbb0);
+      --socket-shadow: 0 18px 38px rgba(45, 34, 22, 0.28), inset 0 2px 3px rgba(255,255,255,0.95);
+      --hole-fill: #1b1815;
+      --hole-rim: #b8860b;
+      --card-shadow: 0 8px 20px rgba(45, 34, 22, 0.12);
+    }
+
+    /* ================= THEME 2: CYBER NEON ================= */
+    body[data-theme="neon"] {
+      --bg-primary: #090b14;
+      --bg-pattern: radial-gradient(circle at 50% 35%, rgba(0, 245, 212, 0.12) 0%, transparent 60%),
+                    linear-gradient(rgba(0, 245, 212, 0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 0, 127, 0.04) 1px, transparent 1px);
+      --bg-size: 100% 100%, 28px 28px, 28px 28px;
+      --surface: rgba(16, 20, 38, 0.86);
+      --surface-solid: #11162b;
+      --surface-border: rgba(0, 245, 212, 0.32);
+      --text-main: #eef8ff;
+      --text-muted: #829ab1;
+      --accent: #00f5d4;
+      --accent-glow: rgba(0, 245, 212, 0.45);
+      --danger: #ff2a6d;
+      --success: #05ffa1;
+      --socket-plate: linear-gradient(145deg, #161d36, #0d1122);
+      --socket-well: radial-gradient(circle, #080b16, #131a33);
+      --socket-shadow: 0 0 35px rgba(0, 245, 212, 0.25), inset 0 0 14px rgba(255, 0, 127, 0.25);
+      --hole-fill: #04060c;
+      --hole-rim: #00f5d4;
+      --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    /* ================= THEME 3: RETRO PIXEL ART ================= */
+    body[data-theme="pixel"] {
+      --bg-primary: #1d2b53;
+      --bg-pattern: radial-gradient(#29366f 2px, transparent 2px);
+      --bg-size: 16px 16px;
+      --surface: #29366f;
+      --surface-solid: #29366f;
+      --surface-border: #fff1e8;
+      --text-main: #fff1e8;
+      --text-muted: #c2c3c7;
+      --accent: #ffec27;
+      --accent-glow: rgba(255, 236, 39, 0.45);
+      --danger: #ff004d;
+      --success: #00e436;
+      --socket-plate: #c2c3c7;
+      --socket-well: #5f574f;
+      --socket-shadow: 6px 6px 0px #000000, inset -4px -4px 0px #83769c, inset 4px 4px 0px #fff1e8;
+      --hole-fill: #000000;
+      --hole-rim: #ffa300;
+      --card-shadow: 4px 4px 0px #000000;
+      --radius-lg: 4px;
+      --radius-md: 4px;
+      --radius-sm: 2px;
+      --font-main: var(--font-mono);
+    }
+
+    /* ================= THEME 4: ENGINEERING BLUEPRINT ================= */
+    body[data-theme="blueprint"] {
+      --bg-primary: #0b2545;
+      --bg-pattern: linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+                    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      --bg-size: 60px 60px, 60px 60px, 12px 12px, 12px 12px;
+      --surface: rgba(13, 43, 82, 0.9);
+      --surface-solid: #0d2b52;
+      --surface-border: rgba(168, 218, 220, 0.55);
+      --text-main: #f1faee;
+      --text-muted: #a8dadc;
+      --accent: #4cc9f0;
+      --accent-glow: rgba(76, 201, 240, 0.4);
+      --danger: #ff595e;
+      --success: #8ac926;
+      --socket-plate: rgba(19, 59, 108, 0.92);
+      --socket-well: rgba(11, 37, 69, 0.95);
+      --socket-shadow: 0 0 0 2px #f1faee, 0 12px 24px rgba(0, 0, 0, 0.35);
+      --hole-fill: #071930;
+      --hole-rim: #f1faee;
+      --card-shadow: 0 0 0 1px rgba(241, 250, 238, 0.35);
+      --font-main: var(--font-mono);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font-main);
+      background-color: var(--bg-primary);
+      background-image: var(--bg-pattern);
+      background-size: var(--bg-size, auto);
+      color: var(--text-main);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    #fxCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    .app-shell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding-top: max(var(--safe-top), 12px);
+      padding-bottom: max(var(--safe-bottom), 12px);
+      z-index: 10;
+    }
+
+    .shake {
+      animation: screenShake 0.32s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes screenShake {
+      10%, 90% { transform: translate3d(-2px, 1px, 0); }
+      20%, 80% { transform: translate3d(4px, -2px, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 2px, 0); }
+      40%, 60% { transform: translate3d(6px, -1px, 0); }
+    }
+
+    /* ================= HEADER ================= */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px 8px;
+      gap: 8px;
+    }
+
+    .stats-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .stat-pill span.val {
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    body[data-theme="realism"] .stat-pill span.val {
+      color: #c75306;
+    }
+
+    .icon-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1.5px solid var(--surface-border);
+      background: var(--surface);
+      color: var(--text-main);
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.12s ease;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* ================= MODE TABS ================= */
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: 2px 14px 8px;
+      padding: 4px;
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--card-shadow);
+    }
+
+    .mode-tab {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-main);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .mode-tab.active {
+      background: var(--accent);
+      color: #0b0e14;
+      box-shadow: 0 2px 10px var(--accent-glow);
+    }
+
+    body[data-theme="realism"] .mode-tab.active {
+      color: #ffffff;
+    }
+
+    /* ================= MODE CONTAINERS ================= */
+    .mode-view {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 14px 4px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .mode-view.active {
+      display: flex;
+    }
+
+    /* ================= MODE 1: SANDBOX ================= */
+    .sandbox-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tier-badge {
+      flex: 1;
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--card-shadow);
+    }
+
+    .tier-info h3 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .tier-info p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .upgrade-btn {
+      background: var(--accent);
+      color: #0b0e14;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    body[data-theme="realism"] .upgrade-btn {
+      color: #ffffff;
+    }
+
+    /* Breaker Box in Sandbox */
+    .breaker-widget {
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      min-width: 78px;
+    }
+
+    .breaker-widget.tripped {
+      border-color: var(--danger);
+      animation: pulseDanger 0.7s infinite alternate;
+    }
+
+    @keyframes pulseDanger {
+      from { box-shadow: 0 0 4px rgba(217, 43, 43, 0.2); }
+      to { box-shadow: 0 0 18px rgba(217, 43, 43, 0.75); }
+    }
+
+    .breaker-label {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .breaker-switch {
+      width: 34px;
+      height: 20px;
+      border-radius: 4px;
+      background: var(--success);
+      position: relative;
+      transition: background 0.2s;
+      border: 1.5px solid rgba(0,0,0,0.25);
+    }
+
+    .breaker-switch::after {
+      content: "I";
+      position: absolute;
+      right: 5px;
+      top: 1px;
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .breaker-widget.tripped .breaker-switch {
+      background: var(--danger);
+    }
+
+    .breaker-widget.tripped .breaker-switch::after {
+      content: "0";
+      left: 5px;
+      right: auto;
+    }
+
+    /* Central Socket Stage */
+    .socket-stage {
+      position: relative;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 245px;
+    }
+
+    .oscilloscope-bg {
+      position: absolute;
+      width: 280px;
+      height: 120px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    body[data-theme="blueprint"] .oscilloscope-bg,
+    body[data-theme="neon"] .oscilloscope-bg {
+      opacity: 0.45;
+    }
+
+    .socket-unit {
+      position: relative;
+      width: 196px;
+      height: 196px;
+      border-radius: 34px;
+      background: var(--socket-plate);
+      box-shadow: var(--socket-shadow);
+      border: 2px solid var(--surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s ease, filter 0.3s ease;
+    }
+
+    body[data-theme="pixel"] .socket-unit {
+      border-radius: 6px;
+      border: 4px solid #000;
+    }
+
+    .socket-unit:active {
+      transform: scale(0.97);
+    }
+
+    .socket-heat-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle, rgba(255, 65, 20, 0.65), rgba(255, 20, 0, 0.25));
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .socket-well {
+      position: relative;
+      width: 136px;
+      height: 136px;
+      border-radius: 50%;
+      background: var(--socket-well);
+      border: 2px solid rgba(0, 0, 0, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 34px;
+      box-shadow: inset 0 6px 14px rgba(0,0,0,0.28);
+    }
+
+    body[data-theme="pixel"] .socket-well {
+      border-radius: 4px;
+    }
+
+    .ground-pin {
+      position: absolute;
+      width: 14px;
+      height: 8px;
+      background: var(--hole-rim);
+      border-radius: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+    }
+
+    .ground-pin.top { top: 6px; }
+    .ground-pin.bottom { bottom: 6px; }
+    .socket-well.grounded .ground-pin { display: block; }
+
+    .socket-hole {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--hole-fill);
+      border: 3px solid var(--hole-rim);
+      box-shadow: inset 0 3px 6px #000;
+      position: relative;
+      transition: box-shadow 0.2s;
+    }
+
+    body[data-theme="pixel"] .socket-hole {
+      border-radius: 2px;
+    }
+
+    .socket-hole.live-glow {
+      box-shadow: 0 0 14px var(--accent), inset 0 0 6px var(--accent);
+    }
+
+    .center-screw {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #8a847c;
+      border: 1px solid #4a453e;
+    }
+
+    .center-screw::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 1px;
+      right: 1px;
+      height: 1.5px;
+      background: #2b2723;
+      transform: rotate(-30deg);
+    }
+
+    /* Plugged Visual Overlay */
+    .plugged-visual {
+      position: absolute;
+      width: 122px;
+      height: 122px;
+      border-radius: 28px;
+      background: linear-gradient(145deg, #2d313d, #181a20);
+      border: 2px solid rgba(255,255,255,0.18);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transform: scale(0.4) translateY(-40px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      z-index: 5;
+    }
+
+    .plugged-visual.inserted {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+
+    .plugged-visual.forbidden-style {
+      background: linear-gradient(145deg, #7f1d1d, #450a0a);
+      border-color: #ef4444;
+    }
+
+    .plugged-icon {
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .plugged-name {
+      font-size: 10px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-top: 4px;
+      text-align: center;
+      padding: 0 6px;
+    }
+
+    .plugged-cord {
+      position: absolute;
+      bottom: -58px;
+      width: 12px;
+      height: 62px;
+      background: linear-gradient(90deg, #111, #3a3f4b, #111);
+      border-radius: 0 0 8px 8px;
+    }
+
+    /* Telemetry Strip below Socket */
+    .telemetry-bar {
+      width: 100%;
+      max-width: 360px;
+      margin-top: 14px;
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--success), #f59e0b, var(--danger));
+      transition: width 0.15s ease;
+    }
+
+    .action-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 6px;
+      font-weight: 600;
+    }
+
+    /* Item Dock */
+    .item-dock-wrapper {
+      margin-top: 6px;
+    }
+
+    .dock-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+
+    .item-dock {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px 8px;
+      scrollbar-width: none;
+    }
+
+    .item-dock::-webkit-scrollbar {
+      display: none;
+    }
+
+    .item-card {
+      flex: 0 0 86px;
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.14s ease, border-color 0.15s ease;
+    }
+
+    .item-card.selected {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+
+    .item-card.locked {
+      opacity: 0.72;
+    }
+
+    .item-card.danger-item {
+      border-color: rgba(217, 43, 43, 0.45);
+    }
+
+    .item-emoji {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .item-title {
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.15;
+      height: 23px;
+      display: flex;
+      align-items: center;
+    }
+
+    .item-watts {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .item-lock-tag {
+      margin-top: 3px;
+      font-size: 9px;
+      font-weight: 800;
+      background: var(--accent);
+      color: #0b0e14;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* ================= MODE 2: ELECTRICIAN SIMULATOR ================= */
+    .elec-card {
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .elec-order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .elec-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #0b0e14;
+    }
+
+    .elec-desc {
+      font-size: 12px;
+      line-height: 1.35;
+      margin: 4px 0 0;
+    }
+
+    .wiring-board {
+      position: relative;
+      flex: 1;
+      min-height: 250px;
+      margin: 8px 0;
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--card-shadow);
+    }
+
+    #wiringSvg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .terminals-row, .cables-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 5;
+    }
+
+    .terminal-node {
+      width: 74px;
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.22);
+      border: 2px solid var(--surface-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .terminal-node.connected {
+      border-color: var(--success);
+    }
+
+    .terminal-screw {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #f1c40f, #b7950b);
+      border: 2px solid #5c4904;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: #1f1902;
+    }
+
+    .terminal-label {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .cable-node {
+      width: 78px;
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 0, 0, 0.18);
+      border: 2px solid var(--surface-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: transform 0.12s;
+    }
+
+    .cable-node.selected {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+
+    .cable-sheath {
+      width: 18px;
+      height: 36px;
+      border-radius: 4px;
+      position: relative;
+      border: 1.5px solid rgba(0,0,0,0.4);
+    }
+
+    .cable-tip {
+      position: absolute;
+      top: -10px;
+      left: 4px;
+      width: 6px;
+      height: 10px;
+      background: #e67e22;
+      border-radius: 2px 2px 0 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .cable-node.stripped .cable-tip {
+      opacity: 1;
+    }
+
+    .cable-status {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-muted);
+    }
+
+    .cable-node.stripped .cable-status {
+      color: var(--success);
+    }
+
+    .breaker-selector {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .amp-btn {
+      flex: 1;
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--surface-border);
+      background: var(--surface);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .amp-btn.active {
+      background: var(--accent);
+      color: #0b0e14;
+      border-color: var(--accent);
+    }
+
+    .power-test-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--success);
+      color: #ffffff;
+      font-family: var(--font-main);
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(35, 140, 71, 0.35);
+    }
+
+    .elec-feedback {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    /* ================= MODE 3: ARCADE OVERLOAD ================= */
+    .arcade-hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .arcade-hearts {
+      font-size: 16px;
+      letter-spacing: 2px;
+    }
+
+    .arcade-voltage {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 900;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .arcade-voltage.surge {
+      background: var(--danger);
+      color: #fff;
+      animation: pulseDanger 0.4s infinite alternate;
+    }
+
+    .power-strip {
+      flex: 1;
+      margin: 10px 0;
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      align-content: center;
+      box-shadow: var(--card-shadow);
+    }
+
+    .strip-slot {
+      background: rgba(0, 0, 0, 0.18);
+      border: 2px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
+      min-height: 106px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.1s, border-color 0.2s;
+    }
+
+    .strip-slot:active {
+      transform: scale(0.95);
+    }
+
+    .strip-slot.occupied {
+      background: var(--surface-solid);
+      border-color: var(--accent);
+    }
+
+    .strip-slot.overheating {
+      border-color: var(--danger);
+      animation: pulseDanger 0.35s infinite alternate;
+    }
+
+    .slot-empty-holes {
+      display: flex;
+      gap: 14px;
+      opacity: 0.55;
+    }
+
+    .slot-empty-holes span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--hole-fill);
+      border: 2px solid var(--hole-rim);
+    }
+
+    .slot-heat-bar {
+      width: 85%;
+      height: 6px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .slot-heat-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+    }
+
+    .arcade-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .arcade-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: var(--accent);
+      color: #0b0e14;
+      font-family: var(--font-main);
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    body[data-theme="realism"] .arcade-btn {
+      color: #fff;
+    }
+
+    .arcade-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* ================= MODALS (VISUAL SETTINGS & UPGRADES) ================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      padding: 14px;
+      padding-bottom: max(var(--safe-bottom), 16px);
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface-solid);
+      border: 1.5px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      animation: slideUp 0.22s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .close-modal {
+      background: rgba(128, 128, 128, 0.2);
+      border: none;
+      color: var(--text-main);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .theme-option {
+      border: 2px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(128, 128, 128, 0.08);
+    }
+
+    .theme-option.active {
+      border-color: var(--accent);
+      background: rgba(128, 128, 128, 0.16);
+    }
+
+    .theme-swatch {
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .theme-option strong {
+      font-size: 12px;
+    }
+
+    .theme-option span {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid var(--surface-border);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .toggle-pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1.5px solid var(--surface-border);
+      background: var(--accent);
+      color: #0b0e14;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    body[data-theme="realism"] .toggle-pill {
+      color: #fff;
+    }
+
+    .toggle-pill.off {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .upgrade-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .upgrade-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--surface-border);
+      background: rgba(128, 128, 128, 0.07);
+      gap: 10px;
+    }
+
+    .upgrade-item h4 {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .upgrade-item p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body data-theme="realism">
+  <canvas id="fxCanvas"></canvas>
+
+  <div class="app-shell" id="appShell">
+    <!-- TOP BAR -->
+    <header class="top-bar">
+      <div class="stats-cluster">
+        <div class="stat-pill">⚡ <span class="val" id="coinsDisplay">0</span> В-к</div>
+        <div class="stat-pill">🔌 <span class="val" id="wattsDisplay">0 Вт</span></div>
+      </div>
+      <div class="icon-actions">
+        <button class="icon-btn" id="soundToggleBtn" title="Звук">🔊</button>
+        <button class="icon-btn" id="visualModalBtn" title="Выбор визуала">🎨</button>
+      </div>
+    </header>
+
+    <!-- 3 GAMEPLAY MODES TABS -->
+    <nav class="mode-tabs">
+      <button class="mode-tab active" data-mode="sandbox">🔌 Песочница</button>
+      <button class="mode-tab" data-mode="electrician">🛠️ Электрик</button>
+      <button class="mode-tab" data-mode="arcade">⚡ Перегрузка</button>
+    </nav>
+
+    <!-- ==================== MODE 1: SANDBOX / CLICKER ==================== -->
+    <section class="mode-view active" id="view-sandbox">
+      <div class="sandbox-top-row">
+        <div class="tier-badge">
+          <div class="tier-info">
+            <h3 id="socketTierName">Советская 6А (1985)</h3>
+            <p id="socketTierLimit">Макс: 1320 Вт • 220В</p>
+          </div>
+          <button class="upgrade-btn" id="openUpgradesBtn">Апгрейд ⬆</button>
+        </div>
+        <div class="breaker-widget" id="sandboxBreaker" title="Автомат защиты">
+          <span class="breaker-label" id="breakerStatusText">АВТ ВКЛ</span>
+          <div class="breaker-switch"></div>
+        </div>
+      </div>
+
+      <div class="socket-stage">
+        <svg class="oscilloscope-bg" viewBox="0 0 280 120">
+          <path id="sineWavePath" fill="none" stroke="currentColor" stroke-width="2" d="M0,60 Q70,10 140,60 T280,60" />
+        </svg>
+
+        <div class="socket-unit" id="mainSocket">
+          <div class="socket-heat-overlay" id="heatOverlay"></div>
+          <div class="socket-well" id="socketWell">
+            <div class="ground-pin top"></div>
+            <div class="socket-hole" id="holeLeft"></div>
+            <div class="center-screw"></div>
+            <div class="socket-hole" id="holeRight"></div>
+            <div class="ground-pin bottom"></div>
+          </div>
+
+          <div class="plugged-visual" id="pluggedVisual">
+            <div class="plugged-icon" id="pluggedIcon">📱</div>
+            <div class="plugged-name" id="pluggedName">Зарядка</div>
+            <div class="plugged-cord"></div>
+          </div>
+        </div>
+
+        <div class="telemetry-bar">
+          <div class="telemetry-row">
+            <span>Нагрев: <strong id="tempText">24°C</strong></span>
+            <span>Доход: <strong id="incomeRateText">0 В-к/с</strong></span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="tempBar"></div>
+          </div>
+        </div>
+        <div class="action-hint" id="sandboxHint">Выбери вилку снизу и нажми на розетку!</div>
+      </div>
+
+      <div class="item-dock-wrapper">
+        <div class="dock-header">
+          <span>ПРИБОРЫ И ПРЕДМЕТЫ</span>
+          <span id="selectedItemTag">Выбрано: Зарядка</span>
+        </div>
+        <div class="item-dock" id="itemDock"></div>
+      </div>
+    </section>
+
+    <!-- ==================== MODE 2: ELECTRICIAN SIMULATOR ==================== -->
+    <section class="mode-view" id="view-electrician">
+      <div class="elec-card">
+        <div class="elec-order-header">
+          <span class="elec-badge" id="elecLevelBadge">Заказ #1</span>
+          <span style="font-size:11px;font-weight:800;color:var(--accent);" id="elecRewardBadge">+150 В-к</span>
+        </div>
+        <p class="elec-desc" id="elecTaskDesc">Подключите евророзетку для электрочайника (2200 Вт). Зачистите жилы, соедините L, N, PE и выберите автомат.</p>
+      </div>
+
+      <div class="wiring-board" id="wiringBoard">
+        <svg id="wiringSvg"></svg>
+
+        <div class="terminals-row">
+          <div class="terminal-node" data-term="L" id="term-L">
+            <div class="terminal-screw">L</div>
+            <span class="terminal-label">Фаза (L)</span>
+          </div>
+          <div class="terminal-node" data-term="N" id="term-N">
+            <div class="terminal-screw">N</div>
+            <span class="terminal-label">Ноль (N)</span>
+          </div>
+          <div class="terminal-node" data-term="PE" id="term-PE">
+            <div class="terminal-screw">⏚</div>
+            <span class="terminal-label">Земля (PE)</span>
+          </div>
+        </div>
+
+        <div style="text-align:center;font-size:10px;color:var(--text-muted);z-index:3;">
+          1. Нажми на кабель снизу (зачистка) → 2. Выбери кабель и нажми на клемму сверху
+        </div>
+
+        <div class="cables-row">
+          <div class="cable-node" data-wire="L" id="wire-L">
+            <div class="cable-sheath" style="background:#b91c1c;"><div class="cable-tip"></div></div>
+            <span class="terminal-label">Жила L</span>
+            <span class="cable-status" id="status-wire-L">В изоляции</span>
+          </div>
+          <div class="cable-node" data-wire="N" id="wire-N">
+            <div class="cable-sheath" style="background:#1d4ed8;"><div class="cable-tip"></div></div>
+            <span class="terminal-label">Жила N</span>
+            <span class="cable-status" id="status-wire-N">В изоляции</span>
+          </div>
+          <div class="cable-node" data-wire="PE" id="wire-PE">
+            <div class="cable-sheath" style="background:repeating-linear-gradient(45deg,#eab308,#eab308 5px,#15803d 5px,#15803d 10px);"><div class="cable-tip"></div></div>
+            <span class="terminal-label">Жила PE</span>
+            <span class="cable-status" id="status-wire-PE">В изоляции</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="breaker-selector">
+          <span style="font-size:11px;font-weight:800;">Автомат:</span>
+          <button class="amp-btn" data-amp="6">6А</button>
+          <button class="amp-btn active" data-amp="16">16А</button>
+          <button class="amp-btn" data-amp="25">25А</button>
+          <button class="amp-btn" data-amp="40">40А</button>
+        </div>
+        <button class="power-test-btn" id="elecTestBtn">⚡ ПОДАТЬ НАПРЯЖЕНИЕ (ПРОВЕРКА)</button>
+        <div class="elec-feedback" id="elecFeedback"></div>
+      </div>
+    </section>
+
+    <!-- ==================== MODE 3: ARCADE OVERLOAD ==================== -->
+    <section class="mode-view" id="view-arcade">
+      <div class="arcade-hud">
+        <div>
+          <div style="font-size:10px;color:var(--text-muted);font-weight:800;">СЧЁТ / РЕКОРД</div>
+          <div style="font-size:14px;font-weight:900;font-family:var(--font-mono);">
+            <span id="arcadeScore">0</span> / <span id="arcadeBest">0</span>
+          </div>
+        </div>
+        <div class="arcade-voltage" id="arcadeVoltage">220 В</div>
+        <div class="arcade-hearts" id="arcadeLives">❤️❤️❤️</div>
+      </div>
+
+      <div class="power-strip" id="powerStrip">
+        <!-- 4 dynamic slots injected via JS -->
+      </div>
+
+      <div class="arcade-controls">
+        <button class="arcade-btn" id="arcadeStartBtn">▶ СТАРТ ИГРЫ</button>
+        <button class="arcade-btn" id="arcadeCoolBtn" disabled>❄️ ОХЛАДИТЬ (ГОТОВО)</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== VISUAL SETTINGS MODAL ==================== -->
+  <div class="modal-backdrop" id="visualModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>🎨 Настройка визуала и звука</h2>
+        <button class="close-modal" data-close="visualModal">✕</button>
+      </div>
+
+      <div class="theme-grid">
+        <div class="theme-option active" data-set-theme="realism">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#e6dfd5,#c4b5a2);"></div>
+          <strong>Реализм (Квартира)</strong>
+          <span>Обои, тени и объёмный пластик</span>
+        </div>
+        <div class="theme-option" data-set-theme="neon">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#090b14,#00f5d4);"></div>
+          <strong>Кибер-неон 2077</strong>
+          <span>Неоновые дуги и HUD-сетка</span>
+        </div>
+        <div class="theme-option" data-set-theme="pixel">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#1d2b53,#ffec27);"></div>
+          <strong>Ретро Пиксель-арт</strong>
+          <span>8-битный аркадный стиль</span>
+        </div>
+        <div class="theme-option" data-set-theme="blueprint">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#0b2545,#4cc9f0);"></div>
+          <strong>Чертёж ГОСТ</strong>
+          <span>Инженерная схема и осциллограф</span>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span>🔊 Звуковые эффекты и гул 50 Гц</span>
+        <button class="toggle-pill" id="modalSoundToggle">ВКЛЮЧЕНО</button>
+      </div>
+      <div class="setting-row">
+        <span>📳 Виброотклик и тряска экрана</span>
+        <button class="toggle-pill" id="modalShakeToggle">ВКЛЮЧЕНО</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== UPGRADES MODAL ==================== -->
+  <div class="modal-backdrop" id="upgradesModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>⚡ Прокачка электросети</h2>
+        <button class="close-modal" data-close="upgradesModal">✕</button>
+      </div>
+      <div class="upgrade-list" id="upgradeList"></div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       1. PROCEDURAL WEB AUDIO ENGINE (NO EXTERNAL AUDIO FILES REQUIRED)
+       ========================================================================= */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.humOsc = null;
+        this.humGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          this.ctx = new AudioCtx();
+          this.setupHum();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      setupHum() {
+        if (!this.ctx) return;
+        this.humOsc = this.ctx.createOscillator();
+        this.humGain = this.ctx.createGain();
+        this.humOsc.type = 'sawtooth';
+        this.humOsc.frequency.setValueAtTime(50, this.ctx.currentTime);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(140, this.ctx.currentTime);
+
+        this.humGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+        this.humOsc.connect(filter);
+        filter.connect(this.humGain);
+        this.humGain.connect(this.ctx.destination);
+        this.humOsc.start();
+      }
+
+      updateHum(loadRatio) {
+        if (!this.ctx || !this.humGain) return;
+        const target = (this.enabled && loadRatio > 0) ? Math.min(0.06, 0.008 + loadRatio * 0.045) : 0.0001;
+        this.humGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.08);
+      }
+
+      playClick(pitch = 600, dur = 0.045) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + dur);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      }
+
+      playPlugIn() {
+        this.playClick(420, 0.06);
+        setTimeout(() => this.playClick(780, 0.04), 35);
+      }
+
+      playPlugOut() {
+        this.playClick(640, 0.04);
+        setTimeout(() => this.playClick(300, 0.06), 30);
+      }
+
+      playSpark(intensity = 1) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const duration = 0.14 + Math.min(0.2, intensity * 0.08);
+        const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          const crackle = Math.random() > 0.72 ? (Math.random() * 2 - 1) : (Math.random() * 0.25 - 0.125);
+          data[i] = crackle * Math.exp(-i / (bufferSize * 0.55));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2400 + Math.random() * 1600, now);
+        filter.Q.setValueAtTime(1.8, now);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(Math.min(0.45, 0.18 * intensity), now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+
+      playExplosion() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        this.playSpark(2.4);
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(135, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + 0.42);
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.46);
+      }
+
+      playSuccess() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const now = this.ctx.currentTime + idx * 0.065;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* =========================================================================
+       2. PARTICLE & SPARK FX SYSTEM (CANVAS)
+       ========================================================================= */
+    const canvas = document.getElementById('fxCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let arcs = [];
+    let floatTexts = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth * window.devicePixelRatio;
+      canvas.height = window.innerHeight * window.devicePixelRatio;
+      ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function spawnSparks(x, y, count = 18, color = '#ffbe0b') {
+      const theme = document.body.dataset.theme;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2.5 + Math.random() * 7.5;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2,
+          life: 1,
+          decay: 0.025 + Math.random() * 0.03,
+          size: theme === 'pixel' ? 4 : (2 + Math.random() * 2.5),
+          color: theme === 'neon' ? (Math.random() > 0.5 ? '#00f5d4' : '#ff007f') : color,
+          type: 'spark'
+        });
+      }
+      // Also spawn 1-2 jagged electric arcs
+      for (let a = 0; a < 2; a++) {
+        arcs.push({
+          x1: x + (Math.random() - 0.5) * 24,
+          y1: y + (Math.random() - 0.5) * 24,
+          x2: x + (Math.random() - 0.5) * 110,
+          y2: y + (Math.random() - 0.5) * 110,
+          life: 1,
+          color: theme === 'neon' ? '#00f5d4' : '#7dd3fc'
+        });
+      }
+    }
+
+    function spawnSmoke(x, y) {
+      particles.push({
+        x: x + (Math.random() - 0.5) * 40,
+        y,
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: -1.2 - Math.random() * 1.2,
+        life: 1,
+        decay: 0.015,
+        size: 10 + Math.random() * 12,
+        color: 'rgba(180, 185, 195, 0.35)',
+        type: 'smoke'
+      });
+    }
+
+    function spawnFloatingText(x, y, text, color = '#ffbe0b') {
+      floatTexts.push({ x, y, text, color, life: 1, vy: -1.4 });
+    }
+
+    function renderFX() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.type === 'spark') {
+          p.vy += 0.28; // gravity
+          p.vx *= 0.98;
+        } else {
+          p.size += 0.25;
+        }
+        p.life -= p.decay;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        if (p.type === 'spark') {
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = p.color;
+          ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      for (let i = arcs.length - 1; i >= 0; i--) {
+        const arc = arcs[i];
+        arc.life -= 0.14;
+        if (arc.life <= 0) {
+          arcs.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = arc.life;
+        ctx.strokeStyle = arc.color;
+        ctx.lineWidth = 2.2;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = arc.color;
+        ctx.beginPath();
+        ctx.moveTo(arc.x1, arc.y1);
+        const midX = (arc.x1 + arc.x2) / 2 + (Math.random() - 0.5) * 34;
+        const midY = (arc.y1 + arc.y2) / 2 + (Math.random() - 0.5) * 34;
+        ctx.lineTo(midX, midY);
+        ctx.lineTo(arc.x2, arc.y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      for (let i = floatTexts.length - 1; i >= 0; i--) {
+        const ft = floatTexts[i];
+        ft.y += ft.vy;
+        ft.life -= 0.022;
+        if (ft.life <= 0) {
+          floatTexts.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = ft.life;
+        ctx.font = '800 14px -apple-system, sans-serif';
+        ctx.fillStyle = ft.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      requestAnimationFrame(renderFX);
+    }
+    requestAnimationFrame(renderFX);
+
+    /* =========================================================================
+       3. GAME STATE & PERSISTENCE
+       ========================================================================= */
+    const SOCKET_TIERS = [
+      { name: 'Советская 6А (1985)', maxWatts: 1320, grounded: false, cost: 0 },
+      { name: 'Евро Schuko 16А', maxWatts: 3520, grounded: true, cost: 250 },
+      { name: 'Уличная IP65 25А', maxWatts: 5500, grounded: true, cost: 900 },
+      { name: 'Промышленная 380В 63А', maxWatts: 15000, grounded: true, cost: 2800 },
+      { name: 'Квантовый портал Теслы', maxWatts: 99999, grounded: true, cost: 8500 }
+    ];
+
+    const SANDBOX_ITEMS = [
+      { id: 'charger', name: 'Зарядка 20Вт', icon: '📱', watts: 20, income: 3, heat: 0.4, cost: 0, forbidden: false },
+      { id: 'lamp', name: 'Лампа 60Вт', icon: '💡', watts: 60, income: 8, heat: 0.8, cost: 0, forbidden: false },
+      { id: 'pc', name: 'Игровой ПК', icon: '💻', watts: 650, income: 24, heat: 2.2, cost: 80, forbidden: false },
+      { id: 'fork', name: 'Столовая вилка', icon: '🍴', watts: 9999, income: 65, heat: 50, cost: 120, forbidden: true },
+      { id: 'kettle', name: 'Чайник 2.2кВт', icon: '🫖', watts: 2200, income: 60, heat: 5.5, cost: 220, forbidden: false },
+      { id: 'paperclip', name: 'Скрепка', icon: '📎', watts: 8888, income: 120, heat: 55, cost: 350, forbidden: true },
+      { id: 'heater', name: 'Обогреватель', icon: '🔥', watts: 2800, income: 95, heat: 7.2, cost: 500, forbidden: false },
+      { id: 'wetcloth', name: 'Мокрая тряпка', icon: '💧', watts: 7777, income: 210, heat: 60, cost: 750, forbidden: true },
+      { id: 'welder', name: 'Сварка 4.5кВт', icon: '⚡', watts: 4500, income: 190, heat: 9.5, cost: 1200, forbidden: false },
+      { id: 'tesla_coil', name: 'Катушка Теслы', icon: '🔮', watts: 12000, income: 550, heat: 12.0, cost: 3200, forbidden: false }
+    ];
+
+    const DEFAULT_STATE = {
+      coins: 50,
+      theme: 'realism',
+      soundEnabled: true,
+      shakeEnabled: true,
+      socketTier: 0,
+      coolingLevel: 1,
+      autoGenLevel: 0,
+      unlockedItems: ['charger', 'lamp'],
+      selectedItemId: 'charger',
+      elecLevel: 1,
+      arcadeBest: 0
+    };
+
+    let state = { ...DEFAULT_STATE };
+    try {
+      const saved = JSON.parse(localStorage.getItem('socket_sim_save_v1'));
+      if (saved) state = { ...DEFAULT_STATE, ...saved };
+    } catch (e) {}
+
+    function saveState() {
+      try {
+        localStorage.setItem('socket_sim_save_v1', JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function triggerHaptic(pattern = [25]) {
+      if (!state.shakeEnabled) return;
+      if (navigator.vibrate) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+      const shell = document.getElementById('appShell');
+      shell.classList.remove('shake');
+      void shell.offsetWidth;
+      shell.classList.add('shake');
+    }
+
+    /* =========================================================================
+       4. MODE 1: SANDBOX / CLICKER LOGIC
+       ========================================================================= */
+    let isPluggedIn = false;
+    let isTripped = false;
+    let socketTemp = 24;
+
+    const mainSocket = document.getElementById('mainSocket');
+    const pluggedVisual = document.getElementById('pluggedVisual');
+    const sandboxBreaker = document.getElementById('sandboxBreaker');
+
+    function getSelectedItem() {
+      return SANDBOX_ITEMS.find(i => i.id === state.selectedItemId) || SANDBOX_ITEMS[0];
+    }
+
+    function getCurrentTier() {
+      return SOCKET_TIERS[state.socketTier] || SOCKET_TIERS[0];
+    }
+
+    function renderItemDock() {
+      const dock = document.getElementById('itemDock');
+      dock.innerHTML = '';
+      SANDBOX_ITEMS.forEach(item => {
+        const unlocked = state.unlockedItems.includes(item.id);
+        const card = document.createElement('div');
+        card.className = 'item-card' +
+          (state.selectedItemId === item.id ? ' selected' : '') +
+          (!unlocked ? ' locked' : '') +
+          (item.forbidden ? ' danger-item' : '');
+
+        card.innerHTML = `
+          <div class="item-emoji">${item.icon}</div>
+          <div class="item-title">${item.name}</div>
+          ${unlocked
+            ? `<div class="item-watts">${item.forbidden ? 'КЗ! ⚡' : item.watts + ' Вт'}</div>`
+            : `<div class="item-lock-tag">🔒 ${item.cost} В-к</div>`
+          }
+        `;
+
+        card.addEventListener('click', () => {
+          sound.init();
+          if (!unlocked) {
+            if (state.coins >= item.cost) {
+              state.coins -= item.cost;
+              state.unlockedItems.push(item.id);
+              state.selectedItemId = item.id;
+              sound.playSuccess();
+              saveState();
+              renderAll();
+            } else {
+              sound.playClick(200, 0.08);
+              const rect = card.getBoundingClientRect();
+              spawnFloatingText(rect.left + rect.width / 2, rect.top, `Нужно ${item.cost} В-к`, '#ef4444');
+            }
+            return;
+          }
+
+          if (isPluggedIn && state.selectedItemId !== item.id) {
+            unplugItem(false);
+          }
+          state.selectedItemId = item.id;
+          sound.playClick(520, 0.04);
+          saveState();
+          renderSandboxUI();
+        });
+
+        dock.appendChild(card);
+      });
+    }
+
+    function plugItem() {
+      if (isTripped) {
+        sound.playClick(180, 0.08);
+        const bRect = sandboxBreaker.getBoundingClientRect();
+        spawnFloatingText(bRect.left + 30, bRect.bottom + 18, 'Включи автомат! ↑', '#ef4444');
+        triggerHaptic([30]);
+        return;
+      }
+
+      const item = getSelectedItem();
+      const tier = getCurrentTier();
+      const sRect = mainSocket.getBoundingClientRect();
+      const cx = sRect.left + sRect.width / 2;
+      const cy = sRect.top + sRect.height / 2;
+
+      isPluggedIn = true;
+      sound.playPlugIn();
+
+      // Check forbidden items or instant massive overload
+      if (item.forbidden || item.watts > tier.maxWatts * 1.45) {
+        pluggedVisual.classList.add('inserted');
+        sound.playExplosion();
+        spawnSparks(cx, cy, 34, '#ffbe0b');
+        triggerHaptic([80, 40, 120]);
+        state.coins += item.income;
+        spawnFloatingText(cx, cy - 60, `КЗ! +${item.income} В-к 💥`, '#ffbe0b');
+        socketTemp = Math.min(120, socketTemp + 38);
+
+        setTimeout(() => {
+          tripBreaker('Короткое замыкание / перегрузка!');
+          isPluggedIn = false;
+          pluggedVisual.classList.remove('inserted');
+          renderSandboxUI();
+        }, 260);
+        saveState();
+        renderTopStats();
+        return;
+      }
+
+      spawnSparks(cx, cy, 8, '#38bdf8');
+      renderSandboxUI();
+    }
+
+    function unplugItem(playSfx = true) {
+      if (!isPluggedIn) return;
+      isPluggedIn = false;
+      if (playSfx) sound.playPlugOut();
+      renderSandboxUI();
+    }
+
+    function tripBreaker(reason) {
+      isTripped = true;
+      isPluggedIn = false;
+      sound.playClick(160, 0.12);
+      sound.updateHum(0);
+      document.getElementById('sandboxHint').textContent = `⚡ ВЫБИЛО АВТОМАТ: ${reason}`;
+      renderSandboxUI();
+    }
+
+    sandboxBreaker.addEventListener('click', () => {
+      sound.init();
+      if (isTripped) {
+        isTripped = false;
+        sound.playClick(680, 0.06);
+        document.getElementById('sandboxHint').textContent = 'Питание восстановлено! Можно втыкать вилку.';
+        renderSandboxUI();
+      } else {
+        tripBreaker('Отключено вручную');
+      }
+    });
+
+    mainSocket.addEventListener('click', () => {
+      sound.init();
+      const sRect = mainSocket.getBoundingClientRect();
+      const cx = sRect.left + sRect.width / 2;
+      const cy = sRect.top + sRect.height / 2;
+
+      if (!isPluggedIn) {
+        plugItem();
+      } else {
+        // Tapping while plugged in boosts energy generation!
+        const item = getSelectedItem();
+        const bonus = Math.max(1, Math.round(item.income * 0.4));
+        state.coins += bonus;
+        socketTemp = Math.min(120, socketTemp + 1.5);
+        sound.playSpark(0.6);
+        spawnSparks(cx, cy, 6, '#38bdf8');
+        spawnFloatingText(cx + (Math.random() - 0.5) * 50, cy - 55, `+${bonus} В-к`, '#38bdf8');
+        renderTopStats();
+      }
+    });
+
+    // Double-tap or pull button via pluggedVisual click pulls out the plug cleanly
+    pluggedVisual.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.init();
+      unplugItem(true);
+    });
+
+    function renderSandboxUI() {
+      const item = getSelectedItem();
+      const tier = getCurrentTier();
+
+      document.getElementById('socketTierName').textContent = tier.name;
+      document.getElementById('socketTierLimit').textContent = `Макс: ${tier.maxWatts} Вт • 220В`;
+      document.getElementById('selectedItemTag').textContent = `Выбрано: ${item.name}`;
+
+      const well = document.getElementById('socketWell');
+      well.classList.toggle('grounded', tier.grounded);
+
+      sandboxBreaker.classList.toggle('tripped', isTripped);
+      document.getElementById('breakerStatusText').textContent = isTripped ? 'ВЫБИЛО!' : 'АВТ ВКЛ';
+
+      pluggedVisual.classList.toggle('inserted', isPluggedIn);
+      pluggedVisual.classList.toggle('forbidden-style', item.forbidden);
+      document.getElementById('pluggedIcon').textContent = item.icon;
+      document.getElementById('pluggedName').textContent = `${item.name} (вынуть)`;
+
+      document.getElementById('holeLeft').classList.toggle('live-glow', !isTripped);
+      document.getElementById('holeRight').classList.toggle('live-glow', !isTripped);
+
+      const activeWatts = (isPluggedIn && !isTripped && !item.forbidden) ? item.watts : 0;
+      const activeIncome = (isPluggedIn && !isTripped && !item.forbidden) ? item.income : 0;
+      const totalIncome = activeIncome + state.autoGenLevel * 5;
+
+      document.getElementById('wattsDisplay').textContent = `${activeWatts} Вт`;
+      document.getElementById('incomeRateText').textContent = `${totalIncome} В-к/с`;
+
+      renderItemDock();
+      renderTopStats();
+    }
+
+    function renderTopStats() {
+      document.getElementById('coinsDisplay').textContent = Math.floor(state.coins);
+    }
+
+    // Sandbox 100ms simulation tick
+    setInterval(() => {
+      const item = getSelectedItem();
+      const tier = getCurrentTier();
+
+      // Passive auto-generator
+      if (state.autoGenLevel > 0) {
+        state.coins += (state.autoGenLevel * 5) * 0.1;
+      }
+
+      if (isPluggedIn && !isTripped && !item.forbidden) {
+        state.coins += item.income * 0.1;
+        const loadRatio = item.watts / tier.maxWatts;
+        sound.updateHum(loadRatio);
+
+        const heatGain = (item.heat * (0.6 + loadRatio * 0.8)) * 0.1;
+        socketTemp = Math.min(125, socketTemp + heatGain);
+
+        if (socketTemp > 85 && Math.random() < 0.35) {
+          const sRect = mainSocket.getBoundingClientRect();
+          spawnSmoke(sRect.left + sRect.width / 2, sRect.top + 30);
+        }
+
+        if (socketTemp >= 115) {
+          const sRect = mainSocket.getBoundingClientRect();
+          spawnSparks(sRect.left + sRect.width / 2, sRect.top + sRect.height / 2, 24, '#ef4444');
+          sound.playExplosion();
+          triggerHaptic([60, 40, 80]);
+          tripBreaker('Перегрев розетки (115°C)!');
+        }
+      } else {
+        sound.updateHum(0);
+        const coolingRate = (2.4 + state.coolingLevel * 1.4) * 0.1;
+        socketTemp = Math.max(24, socketTemp - coolingRate);
+      }
+
+      const tempPct = Math.min(100, Math.max(0, ((socketTemp - 24) / 91) * 100));
+      document.getElementById('tempText').textContent = `${Math.round(socketTemp)}°C`;
+      document.getElementById('tempBar').style.width = `${tempPct}%`;
+      document.getElementById('heatOverlay').style.opacity = Math.max(0, (tempPct - 45) / 55);
+
+      renderTopStats();
+    }, 100);
+
+    // Periodic autosave
+    setInterval(saveState, 4000);
+
+    /* =========================================================================
+       5. UPGRADES MODAL LOGIC
+       ========================================================================= */
+    function renderUpgradesModal() {
+      const list = document.getElementById('upgradeList');
+      list.innerHTML = '';
+
+      // 1. Socket Tier Upgrade
+      const nextTier = SOCKET_TIERS[state.socketTier + 1];
+      const tierCard = document.createElement('div');
+      tierCard.className = 'upgrade-item';
+      tierCard.innerHTML = `
+        <div>
+          <h4>🔌 Уровень розетки (${state.socketTier + 1}/${SOCKET_TIERS.length})</h4>
+          <p>${nextTier ? `След: ${nextTier.name} (${nextTier.maxWatts} Вт)` : 'Максимальный уровень!'}</p>
+        </div>
+        <button class="upgrade-btn" ${!nextTier ? 'disabled' : ''} id="buyTierBtn">
+          ${nextTier ? `${nextTier.cost} В-к` : 'МАКС'}
+        </button>
+      `;
+      list.appendChild(tierCard);
+      if (nextTier) {
+        tierCard.querySelector('#buyTierBtn').addEventListener('click', () => {
+          if (state.coins >= nextTier.cost) {
+            state.coins -= nextTier.cost;
+            state.socketTier++;
+            sound.playSuccess();
+            saveState();
+            renderSandboxUI();
+            renderUpgradesModal();
+          } else {
+            sound.playClick(200, 0.08);
+          }
+        });
+      }
+
+      // 2. Cooling Upgrade
+      const coolCost = state.coolingLevel * 140;
+      const coolCard = document.createElement('div');
+      coolCard.className = 'upgrade-item';
+      coolCard.innerHTML = `
+        <div>
+          <h4>❄️ Радиатор охлаждения (Ур. ${state.coolingLevel})</h4>
+          <p>Ускоряет остывание контактов после нагрузки</p>
+        </div>
+        <button class="upgrade-btn" id="buyCoolBtn">${coolCost} В-к</button>
+      `;
+      list.appendChild(coolCard);
+      coolCard.querySelector('#buyCoolBtn').addEventListener('click', () => {
+        if (state.coins >= coolCost) {
+          state.coins -= coolCost;
+          state.coolingLevel++;
+          sound.playSuccess();
+          saveState();
+          renderUpgradesModal();
+        } else {
+          sound.playClick(200, 0.08);
+        }
+      });
+
+      // 3. Auto-Generator Upgrade
+      const genCost = (state.autoGenLevel + 1) * 180;
+      const genCard = document.createElement('div');
+      genCard.className = 'upgrade-item';
+      genCard.innerHTML = `
+        <div>
+          <h4>🔋 Умный счётчик (Ур. ${state.autoGenLevel})</h4>
+          <p>Пассивный доход: +${state.autoGenLevel * 5} В-к/с</p>
+        </div>
+        <button class="upgrade-btn" id="buyGenBtn">${genCost} В-к</button>
+      `;
+      list.appendChild(genCard);
+      genCard.querySelector('#buyGenBtn').addEventListener('click', () => {
+        if (state.coins >= genCost) {
+          state.coins -= genCost;
+          state.autoGenLevel++;
+          sound.playSuccess();
+          renderSandboxUI();
+          renderUpgradesModal();
+        } else {
+          sound.playClick(200, 0.08);
+        }
+      });
+    }
+
+    document.getElementById('openUpgradesBtn').addEventListener('click', () => {
+      sound.init();
+      sound.playClick(550, 0.04);
+      renderUpgradesModal();
+      document.getElementById('upgradesModal').classList.add('open');
+    });
+
+    /* =========================================================================
+       6. MODE 2: ELECTRICIAN SIMULATOR LOGIC
+       ========================================================================= */
+    const ELEC_CONTRACTS = [
+      { desc: 'Подключить розетку в спальне для ночника (100 Вт). Зачистите 3 жилы, соедините L, N, PE и поставьте автомат 6А или 16А.', requiredAmp: [6, 16], reward: 120 },
+      { desc: 'Кухонная линия под электрочайник и тостер (3100 Вт, ~14А). Выберите подходящий автомат (16А) и правильно подключите жилы!', requiredAmp: [16], reward: 200 },
+      { desc: 'Силовая линия для проточного водонагревателя (5000 Вт, ~22.7А). Поставьте автомат 25А и не перепутайте фазу с землёй!', requiredAmp: [25], reward: 320 },
+      { desc: 'Мастерская: подключение сварочного поста (7500 Вт, ~34А). Требуется мощный автомат 40А и надёжное заземление PE.', requiredAmp: [40], reward: 480 }
+    ];
+
+    let elecState = {
+      stripped: { L: false, N: false, PE: false },
+      selectedWire: null,
+      connections: { L: null, N: null, PE: null }, // terminal -> wire
+      selectedAmp: 16
+    };
+
+    function getCurrentContract() {
+      const idx = (state.elecLevel - 1) % ELEC_CONTRACTS.length;
+      return ELEC_CONTRACTS[idx];
+    }
+
+    function resetElectricianBoard() {
+      elecState = {
+        stripped: { L: false, N: false, PE: false },
+        selectedWire: null,
+        connections: { L: null, N: null, PE: null },
+        selectedAmp: 16
+      };
+      document.getElementById('elecFeedback').textContent = '';
+      renderElectricianUI();
+    }
+
+    function drawWiresSVG() {
+      const svg = document.getElementById('wiringSvg');
+      const boardRect = document.getElementById('wiringBoard').getBoundingClientRect();
+      svg.innerHTML = '';
+
+      const wireColors = { L: '#ef4444', N: '#3b82f6', PE: '#22c55e' };
+
+      ['L', 'N', 'PE'].forEach(term => {
+        const wire = elecState.connections[term];
+        if (!wire) return;
+        const wEl = document.getElementById(`wire-${wire}`);
+        const tEl = document.getElementById(`term-${term}`);
+        if (!wEl || !tEl) return;
+
+        const wRect = wEl.getBoundingClientRect();
+        const tRect = tEl.getBoundingClientRect();
+
+        const x1 = wRect.left + wRect.width / 2 - boardRect.left;
+        const y1 = wRect.top - boardRect.top + 8;
+        const x2 = tRect.left + tRect.width / 2 - boardRect.left;
+        const y2 = tRect.bottom - boardRect.top - 8;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const cpY = (y1 + y2) / 2;
+        path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
+        path.setAttribute('stroke', wireColors[wire]);
+        path.setAttribute('stroke-width', '5');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('fill', 'none');
+        svg.appendChild(path);
+      });
+    }
+
+    function renderElectricianUI() {
+      const contract = getCurrentContract();
+      document.getElementById('elecLevelBadge').textContent = `Заказ #${state.elecLevel}`;
+      document.getElementById('elecRewardBadge').textContent = `+${contract.reward} В-к`;
+      document.getElementById('elecTaskDesc').textContent = contract.desc;
+
+      ['L', 'N', 'PE'].forEach(w => {
+        const wEl = document.getElementById(`wire-${w}`);
+        const stEl = document.getElementById(`status-wire-${w}`);
+        wEl.classList.toggle('stripped', elecState.stripped[w]);
+        wEl.classList.toggle('selected', elecState.selectedWire === w);
+        stEl.textContent = elecState.stripped[w] ? 'Зачищена ✓' : 'В изоляции';
+
+        const tEl = document.getElementById(`term-${w}`);
+        tEl.classList.toggle('connected', Boolean(elecState.connections[w]));
+      });
+
+      document.querySelectorAll('.amp-btn').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.amp) === elecState.selectedAmp);
+      });
+
+      requestAnimationFrame(drawWiresSVG);
+    }
+
+    document.querySelectorAll('.cable-node').forEach(node => {
+      node.addEventListener('click', () => {
+        sound.init();
+        const w = node.dataset.wire;
+        if (!elecState.stripped[w]) {
+          elecState.stripped[w] = true;
+          elecState.selectedWire = w;
+          sound.playClick(720, 0.05);
+        } else {
+          elecState.selectedWire = (elecState.selectedWire === w) ? null : w;
+          sound.playClick(480, 0.04);
+        }
+        renderElectricianUI();
+      });
+    });
+
+    document.querySelectorAll('.terminal-node').forEach(node => {
+      node.addEventListener('click', () => {
+        sound.init();
+        const term = node.dataset.term;
+        if (!elecState.selectedWire) {
+          // If already connected, disconnect on tap
+          if (elecState.connections[term]) {
+            elecState.connections[term] = null;
+            sound.playPlugOut();
+            renderElectricianUI();
+          }
+          return;
+        }
+        const wire = elecState.selectedWire;
+        if (!elecState.stripped[wire]) {
+          document.getElementById('elecFeedback').textContent = '⚠️ Сначала зачисти изоляцию с выбранной жилы!';
+          return;
+        }
+        // Remove wire from any previous terminal
+        Object.keys(elecState.connections).forEach(k => {
+          if (elecState.connections[k] === wire) elecState.connections[k] = null;
+        });
+        elecState.connections[term] = wire;
+        elecState.selectedWire = null;
+        sound.playPlugIn();
+        renderElectricianUI();
+      });
+    });
+
+    document.querySelectorAll('.amp-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.init();
+        elecState.selectedAmp = Number(btn.dataset.amp);
+        sound.playClick(600, 0.04);
+        renderElectricianUI();
+      });
+    });
+
+    document.getElementById('elecTestBtn').addEventListener('click', () => {
+      sound.init();
+      const { L, N, PE } = elecState.connections;
+      const fb = document.getElementById('elecFeedback');
+      const boardRect = document.getElementById('wiringBoard').getBoundingClientRect();
+      const cx = boardRect.left + boardRect.width / 2;
+      const cy = boardRect.top + boardRect.height / 2;
+
+      if (!L || !N || !PE) {
+        fb.style.color = '#f59e0b';
+        fb.textContent = '⚠️ Подключите все 3 жилы (L, N и PE) к клеммам!';
+        sound.playClick(240, 0.07);
+        return;
+      }
+
+      if (PE === 'L' || L === 'PE') {
+        fb.style.color = '#ef4444';
+        fb.textContent = '💥 БАБАХ! Фаза попала на землю (PE) — сработало УЗО и выбило щиток!';
+        sound.playExplosion();
+        spawnSparks(cx, cy, 32, '#ef4444');
+        triggerHaptic([80, 40, 100]);
+        return;
+      }
+
+      if (L !== 'L' || N !== 'N' || PE !== 'PE') {
+        fb.style.color = '#ef4444';
+        fb.textContent = '⚡ Ошибка полярности! Проверь соответствие L -> L, N -> N, PE -> PE.';
+        sound.playSpark(1.2);
+        spawnSparks(cx, cy, 16, '#ffbe0b');
+        return;
+      }
+
+      const contract = getCurrentContract();
+      if (!contract.requiredAmp.includes(elecState.selectedAmp)) {
+        fb.style.color = '#f59e0b';
+        fb.textContent = elecState.selectedAmp < contract.requiredAmp[0]
+          ? `⚠️ Автомат ${elecState.selectedAmp}А слишком слабый — выбило под нагрузкой!`
+          : `⚠️ Автомат ${elecState.selectedAmp}А слишком мощный для этого кабеля — риск перегрева!`;
+        sound.playClick(210, 0.1);
+        return;
+      }
+
+      // Success!
+      fb.style.color = '#22c55e';
+      fb.textContent = `✅ Идеальный монтаж! 220В в норме (+${contract.reward} В-к)`;
+      sound.playSuccess();
+      spawnSparks(cx, cy, 14, '#22c55e');
+      state.coins += contract.reward;
+      state.elecLevel++;
+      saveState();
+      renderTopStats();
+      setTimeout(resetElectricianBoard, 1500);
+    });
+
+    /* =========================================================================
+       7. MODE 3: REACTION ARCADE ("OVERLOAD") LOGIC
+       ========================================================================= */
+    const ARCADE_DEVICES = [
+      { name: 'Чайник', icon: '🫖', watts: 2200, heatRate: 14 },
+      { name: 'Фен', icon: '💨', watts: 1800, heatRate: 12 },
+      { name: 'Майнер', icon: '🖥️', watts: 2800, heatRate: 17 },
+      { name: 'Тостер', icon: '🍞', watts: 1200, heatRate: 10 },
+      { name: 'СВЧ-печь', icon: '🍲', watts: 1600, heatRate: 11 },
+      { name: 'Утюг', icon: '👕', watts: 2400, heatRate: 15 }
+    ];
+
+    let arcadeRunning = false;
+    let arcadeScore = 0;
+    let arcadeLives = 3;
+    let arcadeVoltage = 220;
+    let coolCooldown = 0;
+    let arcadeSlots = [null, null, null, null];
+    let arcadeLoopId = null;
+    let arcadeSpawnTimer = 0;
+
+    function renderArcadeStrip() {
+      const strip = document.getElementById('powerStrip');
+      strip.innerHTML = '';
+      arcadeSlots.forEach((slot, idx) => {
+        const el = document.createElement('div');
+        el.className = 'strip-slot' +
+          (slot ? ' occupied' : '') +
+          (slot && slot.heat > 72 ? ' overheating' : '');
+
+        if (!slot) {
+          el.innerHTML = `
+            <div class="slot-empty-holes"><span></span><span></span></div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:8px;">Гнездо #${idx + 1}</div>
+          `;
+        } else {
+          el.innerHTML = `
+            <div style="font-size:28px;">${slot.icon}</div>
+            <div style="font-size:11px;font-weight:800;margin-top:2px;">${slot.name}</div>
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--accent);">${slot.watts} Вт</div>
+            <div class="slot-heat-bar"><div class="slot-heat-fill" style="width:${Math.min(100, slot.heat)}%"></div></div>
+          `;
+          el.addEventListener('click', () => {
+            if (!arcadeRunning || !arcadeSlots[idx]) return;
+            sound.init();
+            sound.playPlugOut();
+            const r = el.getBoundingClientRect();
+            const pts = Math.round(15 + arcadeSlots[idx].heat * 0.4);
+            arcadeScore += pts;
+            spawnFloatingText(r.left + r.width / 2, r.top + 20, `Выдернул! +${pts}`, '#22c55e');
+            arcadeSlots[idx] = null;
+            updateArcadeHUD();
+            renderArcadeStrip();
+          });
+        }
+        strip.appendChild(el);
+      });
+    }
+
+    function updateArcadeHUD() {
+      document.getElementById('arcadeScore').textContent = arcadeScore;
+      document.getElementById('arcadeBest').textContent = state.arcadeBest;
+      document.getElementById('arcadeLives').textContent = '❤️'.repeat(Math.max(0, arcadeLives)) || '💀';
+      const vEl = document.getElementById('arcadeVoltage');
+      vEl.textContent = `${arcadeVoltage} В`;
+      vEl.classList.toggle('surge', arcadeVoltage > 240);
+    }
+
+    function startArcade() {
+      sound.init();
+      arcadeRunning = true;
+      arcadeScore = 0;
+      arcadeLives = 3;
+      arcadeVoltage = 220;
+      coolCooldown = 0;
+      arcadeSlots = [null, null, null, null];
+      arcadeSpawnTimer = 0;
+
+      document.getElementById('arcadeStartBtn').textContent = '🔄 ЗАНОВО';
+      document.getElementById('arcadeCoolBtn').disabled = false;
+      updateArcadeHUD();
+      renderArcadeStrip();
+
+      if (arcadeLoopId) clearInterval(arcadeLoopId);
+      arcadeLoopId = setInterval(tickArcade, 200);
+    }
+
+    function stopArcade() {
+      arcadeRunning = false;
+      if (arcadeLoopId) clearInterval(arcadeLoopId);
+      sound.playExplosion();
+      if (arcadeScore > state.arcadeBest) {
+        state.arcadeBest = arcadeScore;
+      }
+      const rewardCoins = Math.max(10, Math.round(arcadeScore * 0.35));
+      state.coins += rewardCoins;
+      saveState();
+      renderTopStats();
+      updateArcadeHUD();
+
+      const stripRect = document.getElementById('powerStrip').getBoundingClientRect();
+      spawnFloatingText(stripRect.left + stripRect.width / 2, stripRect.top + 90, `ФИНИШ! +${rewardCoins} В-к`, '#ffbe0b');
+      document.getElementById('arcadeStartBtn').textContent = '▶ ИГРАТЬ ЕЩЁ';
+      document.getElementById('arcadeCoolBtn').disabled = true;
+    }
+
+    function tickArcade() {
+      if (!arcadeRunning) return;
+
+      // Random voltage surges
+      if (Math.random() < 0.08) {
+        arcadeVoltage = Math.random() < 0.45 ? 262 : 220;
+      }
+
+      // Spawn new appliance in empty slot
+      arcadeSpawnTimer += 0.2;
+      const spawnInterval = Math.max(0.85, 1.9 - arcadeScore / 600);
+      if (arcadeSpawnTimer >= spawnInterval) {
+        arcadeSpawnTimer = 0;
+        const emptyIndices = arcadeSlots.map((s, i) => s === null ? i : -1).filter(i => i !== -1);
+        if (emptyIndices.length > 0) {
+          const slotIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+          const dev = ARCADE_DEVICES[Math.floor(Math.random() * ARCADE_DEVICES.length)];
+          arcadeSlots[slotIdx] = { ...dev, heat: 8 };
+          sound.playPlugIn();
+        }
+      }
+
+      // Heat up occupied slots
+      const surgeMult = arcadeVoltage > 240 ? 1.65 : 1.0;
+      for (let i = 0; i < 4; i++) {
+        const s = arcadeSlots[i];
+        if (!s) continue;
+        s.heat += (s.heatRate * surgeMult) * 0.2;
+        if (s.heat >= 100) {
+          // Slot exploded!
+          const stripEl = document.getElementById('powerStrip').children[i];
+          if (stripEl) {
+            const r = stripEl.getBoundingClientRect();
+            spawnSparks(r.left + r.width / 2, r.top + r.height / 2, 24, '#ef4444');
+          }
+          sound.playExplosion();
+          triggerHaptic([60, 30, 80]);
+          arcadeSlots[i] = null;
+          arcadeLives--;
+          if (arcadeLives <= 0) {
+            renderArcadeStrip();
+            stopArcade();
+            return;
+          }
+        }
+      }
+
+      // Cooldown timer for Freeze button
+      if (coolCooldown > 0) {
+        coolCooldown = Math.max(0, coolCooldown - 0.2);
+        const btn = document.getElementById('arcadeCoolBtn');
+        btn.disabled = coolCooldown > 0;
+        btn.textContent = coolCooldown > 0 ? `❄️ ОХЛАЖДЕНИЕ (${coolCooldown.toFixed(1)}с)` : '❄️ ОХЛАДИТЬ (ГОТОВО)';
+      }
+
+      updateArcadeHUD();
+      renderArcadeStrip();
+    }
+
+    document.getElementById('arcadeStartBtn').addEventListener('click', startArcade);
+    document.getElementById('arcadeCoolBtn').addEventListener('click', () => {
+      if (!arcadeRunning || coolCooldown > 0) return;
+      sound.playSpark(0.7);
+      arcadeSlots.forEach(s => { if (s) s.heat = Math.max(0, s.heat - 45); });
+      coolCooldown = 6.0;
+      renderArcadeStrip();
+    });
+
+    /* =========================================================================
+       8. NAVIGATION, VISUAL THEME SETTINGS & AUDIO TOGGLES
+       ========================================================================= */
+    document.querySelectorAll('.mode-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        sound.init();
+        sound.playClick(560, 0.04);
+        const mode = tab.dataset.mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.mode-view').forEach(v => v.classList.remove('active'));
+        document.getElementById(`view-${mode}`).classList.add('active');
+
+        if (mode === 'electrician') renderElectricianUI();
+        if (mode === 'arcade') { updateArcadeHUD(); renderArcadeStrip(); }
+      });
+    });
+
+    function applyVisualTheme(themeName) {
+      state.theme = themeName;
+      document.body.dataset.theme = themeName;
+      document.querySelectorAll('.theme-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.setTheme === themeName);
+      });
+      saveState();
+    }
+
+    document.querySelectorAll('.theme-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        sound.init();
+        sound.playClick(680, 0.05);
+        applyVisualTheme(opt.dataset.setTheme);
+      });
+    });
+
+    function syncSettingsToggles() {
+      sound.enabled = state.soundEnabled;
+      if (!state.soundEnabled) sound.updateHum(0);
+
+      document.getElementById('soundToggleBtn').textContent = state.soundEnabled ? '🔊' : '🔇';
+      const mSound = document.getElementById('modalSoundToggle');
+      mSound.textContent = state.soundEnabled ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО';
+      mSound.classList.toggle('off', !state.soundEnabled);
+
+      const mShake = document.getElementById('modalShakeToggle');
+      mShake.textContent = state.shakeEnabled ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО';
+      mShake.classList.toggle('off', !state.shakeEnabled);
+    }
+
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      sound.init();
+      state.soundEnabled = !state.soundEnabled;
+      if (state.soundEnabled) sound.playClick(640, 0.05);
+      syncSettingsToggles();
+      saveState();
+    });
+
+    document.getElementById('modalSoundToggle').addEventListener('click', () => {
+      sound.init();
+      state.soundEnabled = !state.soundEnabled;
+      if (state.soundEnabled) sound.playClick(640, 0.05);
+      syncSettingsToggles();
+      saveState();
+    });
+
+    document.getElementById('modalShakeToggle').addEventListener('click', () => {
+      state.shakeEnabled = !state.shakeEnabled;
+      syncSettingsToggles();
+      if (state.shakeEnabled) triggerHaptic([25]);
+      saveState();
+    });
+
+    document.getElementById('visualModalBtn').addEventListener('click', () => {
+      sound.init();
+      sound.playClick(540, 0.04);
+      document.getElementById('visualModal').classList.add('open');
+    });
+
+    document.querySelectorAll('.close-modal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById(btn.dataset.close).classList.remove('open');
+      });
+    });
+
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) backdrop.classList.remove('open');
+      });
+    });
+
+    // Animated 50Hz sine wave in Blueprint/Neon themes
+    let wavePhase = 0;
+    function animateOscilloscope() {
+      wavePhase += 0.14;
+      const path = document.getElementById('sineWavePath');
+      if (path) {
+        let d = 'M 0 60 ';
+        for (let x = 0; x <= 280; x += 14) {
+          const amp = (isPluggedIn && !isTripped) ? 38 : 14;
+          const y = 60 + Math.sin(x * 0.045 + wavePhase) * amp;
+          d += `L ${x} ${y.toFixed(1)} `;
+        }
+        path.setAttribute('d', d);
+      }
+      requestAnimationFrame(animateOscilloscope);
+    }
+    requestAnimationFrame(animateOscilloscope);
+
+    // Boot application
+    function renderAll() {
+      applyVisualTheme(state.theme);
+      syncSettingsToggles();
+      renderSandboxUI();
+      renderElectricianUI();
+      updateArcadeHUD();
+      renderArcadeStrip();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "appId": "com.socketsimulator.app",
+  "appName": "Симулятор розетки",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
