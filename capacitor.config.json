@@ -1,6 +1,6 @@
 {
   "appId": "com.socketsimulator.app",
-  "appName": "Симулятор розетки",
+  "appName": "Розетка и Маяк",
   "webDir": "www",
   "bundledWebRuntime": false,
   "ios": {

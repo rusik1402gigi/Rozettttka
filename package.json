@@ -1,7 +1,7 @@
 {
   "name": "socket-simulator",
-  "version": "1.0.0",
-  "description": "Симулятор розетки — интерактивная игра и симулятор электрика для iOS и Web",
+  "version": "2.0.0",
+  "description": "Симулятор розетки 220В + Ночной маяк — сборник медитативных и аркадных мини-игр для iOS и Web",
   "main": "index.html",
   "scripts": {
     "sync": "npx cap sync",

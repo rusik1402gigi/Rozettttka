@@ -5,22 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Симулятор розетки" />
-  <meta name="theme-color" content="#141824" />
-  <title>Симулятор розетки 220В</title>
+  <meta name="apple-mobile-web-app-title" content="Розетка и Маяк" />
+  <meta name="theme-color" content="#0b1324" />
+  <title>Симулятор розетки & Ночной маяк</title>
   <style>
     :root {
       --safe-top: env(safe-area-inset-top, 12px);
       --safe-bottom: env(safe-area-inset-bottom, 16px);
       --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
       --font-mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-      --radius-lg: 20px;
-      --radius-md: 14px;
+      --radius-lg: 22px;
+      --radius-md: 15px;
       --radius-sm: 10px;
-      --transition: 0.2s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    /* ================= THEME 1: REALISM (APARTMENT WALL) ================= */
+    /* ================= SOCKET THEMES ================= */
     body[data-theme="realism"] {
       --bg-primary: #d9cfc1;
       --bg-pattern: repeating-linear-gradient(
@@ -30,9 +29,9 @@
         rgba(0,0,0,0.03) 18px,
         rgba(0,0,0,0.03) 36px
       );
-      --surface: rgba(255, 252, 247, 0.88);
+      --surface: rgba(255, 252, 247, 0.9);
       --surface-solid: #fcf8f2;
-      --surface-border: rgba(120, 100, 80, 0.22);
+      --surface-border: rgba(120, 100, 80, 0.24);
       --text-main: #2a241e;
       --text-muted: #6e6256;
       --accent: #e06d1b;
@@ -47,14 +46,13 @@
       --card-shadow: 0 8px 20px rgba(45, 34, 22, 0.12);
     }
 
-    /* ================= THEME 2: CYBER NEON ================= */
     body[data-theme="neon"] {
       --bg-primary: #090b14;
       --bg-pattern: radial-gradient(circle at 50% 35%, rgba(0, 245, 212, 0.12) 0%, transparent 60%),
                     linear-gradient(rgba(0, 245, 212, 0.04) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255, 0, 127, 0.04) 1px, transparent 1px);
       --bg-size: 100% 100%, 28px 28px, 28px 28px;
-      --surface: rgba(16, 20, 38, 0.86);
+      --surface: rgba(16, 20, 38, 0.88);
       --surface-solid: #11162b;
       --surface-border: rgba(0, 245, 212, 0.32);
       --text-main: #eef8ff;
@@ -71,7 +69,6 @@
       --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     }
 
-    /* ================= THEME 3: RETRO PIXEL ART ================= */
     body[data-theme="pixel"] {
       --bg-primary: #1d2b53;
       --bg-pattern: radial-gradient(#29366f 2px, transparent 2px);
@@ -97,7 +94,6 @@
       --font-main: var(--font-mono);
     }
 
-    /* ================= THEME 4: ENGINEERING BLUEPRINT ================= */
     body[data-theme="blueprint"] {
       --bg-primary: #0b2545;
       --bg-pattern: linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
@@ -105,7 +101,7 @@
                     linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
       --bg-size: 60px 60px, 60px 60px, 12px 12px, 12px 12px;
-      --surface: rgba(13, 43, 82, 0.9);
+      --surface: rgba(13, 43, 82, 0.92);
       --surface-solid: #0d2b52;
       --surface-border: rgba(168, 218, 220, 0.55);
       --text-main: #f1faee;
@@ -137,11 +133,15 @@
       height: 100%;
       overflow: hidden;
       font-family: var(--font-main);
+      background-color: #0b1324;
+      color: #f8fafc;
+    }
+
+    body.in-socket-game {
       background-color: var(--bg-primary);
       background-image: var(--bg-pattern);
       background-size: var(--bg-size, auto);
       color: var(--text-main);
-      transition: background-color 0.3s ease, color 0.3s ease;
     }
 
     #fxCanvas {
@@ -153,15 +153,17 @@
       z-index: 60;
     }
 
-    .app-shell {
-      position: relative;
+    .screen {
+      display: none;
       width: 100%;
       height: 100%;
-      display: flex;
       flex-direction: column;
       padding-top: max(var(--safe-top), 12px);
-      padding-bottom: max(var(--safe-bottom), 12px);
-      z-index: 10;
+      padding-bottom: max(var(--safe-bottom), 14px);
+    }
+
+    .screen.active {
+      display: flex;
     }
 
     .shake {
@@ -175,40 +177,262 @@
       40%, 60% { transform: translate3d(6px, -1px, 0); }
     }
 
-    /* ================= HEADER ================= */
+    /* =========================================================================
+       SCREEN 0: GAME SELECTOR HUB (MAIN MENU)
+       ========================================================================= */
+    #screen-menu {
+      background: radial-gradient(circle at 20% 15%, #1e293b 0%, #090d16 65%, #05070c 100%);
+      color: #f8fafc;
+      padding-left: 16px;
+      padding-right: 16px;
+      justify-content: space-between;
+      overflow-y: auto;
+    }
+
+    .hub-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    .hub-title-block h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -0.3px;
+      background: linear-gradient(90deg, #f8fafc, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hub-title-block p {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .hub-sound-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .hub-wallet-bar {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .hub-chip {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .games-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .game-card {
+      position: relative;
+      border-radius: 24px;
+      padding: 18px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      transition: transform 0.16s ease, box-shadow 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .game-card:active {
+      transform: scale(0.98);
+    }
+
+    .game-card.socket-card {
+      background: linear-gradient(135deg, #27221d 0%, #3b2d1f 55%, #1c1917 100%);
+      box-shadow: 0 14px 32px rgba(224, 109, 27, 0.22);
+    }
+
+    .game-card.lighthouse-card {
+      background: linear-gradient(135deg, #0c1e35 0%, #16324f 55%, #091526 100%);
+      box-shadow: 0 14px 32px rgba(56, 189, 248, 0.22);
+    }
+
+    .game-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .game-icon-box {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .socket-card .game-icon-box {
+      background: rgba(224, 109, 27, 0.22);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .lighthouse-card .game-icon-box {
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(125, 211, 252, 0.4);
+    }
+
+    .game-tag {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+    }
+
+    .socket-card .game-tag {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .lighthouse-card .game-tag {
+      background: rgba(56, 189, 248, 0.2);
+      color: #7dd3fc;
+    }
+
+    .game-card h2 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .game-card p {
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.4;
+      color: #cbd5e1;
+    }
+
+    .game-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .game-stat-mini {
+      font-size: 11px;
+      color: #94a3b8;
+      font-family: var(--font-mono);
+    }
+
+    .play-pill {
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #090d16;
+    }
+
+    .socket-card .play-pill {
+      background: #fbbf24;
+    }
+
+    .lighthouse-card .play-pill {
+      background: #38bdf8;
+    }
+
+    .hub-footer-note {
+      text-align: center;
+      font-size: 11px;
+      color: #64748b;
+      padding-top: 8px;
+    }
+
+    /* =========================================================================
+       SHARED TOP BAR FOR GAMES
+       ========================================================================= */
     .top-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 14px 8px;
+      padding: 4px 14px 8px;
       gap: 8px;
+      z-index: 20;
+    }
+
+    .back-menu-btn {
+      height: 36px;
+      padding: 0 11px;
+      border-radius: 999px;
+      border: 1.5px solid var(--surface-border, rgba(255,255,255,0.2));
+      background: var(--surface, rgba(15, 23, 42, 0.78));
+      color: var(--text-main, #f8fafc);
+      font-family: var(--font-main);
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .stats-cluster {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 6px;
     }
 
     .stat-pill {
-      background: var(--surface);
-      border: 1.5px solid var(--surface-border);
+      background: var(--surface, rgba(15, 23, 42, 0.78));
+      border: 1.5px solid var(--surface-border, rgba(255,255,255,0.2));
       border-radius: 999px;
-      padding: 6px 12px;
+      padding: 5px 10px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 13px;
+      gap: 5px;
+      font-size: 12px;
       font-weight: 700;
-      box-shadow: var(--card-shadow);
+      box-shadow: var(--card-shadow, none);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
 
     .stat-pill span.val {
       font-family: var(--font-mono);
-      color: var(--accent);
+      color: var(--accent, #38bdf8);
     }
 
     body[data-theme="realism"] .stat-pill span.val {
@@ -218,35 +442,33 @@
     .icon-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .icon-btn {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      border: 1.5px solid var(--surface-border);
-      background: var(--surface);
-      color: var(--text-main);
-      font-size: 17px;
+      border: 1.5px solid var(--surface-border, rgba(255,255,255,0.2));
+      background: var(--surface, rgba(15, 23, 42, 0.78));
+      color: var(--text-main, #f8fafc);
+      font-size: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      box-shadow: var(--card-shadow);
-      transition: transform 0.12s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
-    .icon-btn:active {
-      transform: scale(0.9);
-    }
-
-    /* ================= MODE TABS ================= */
+    /* =========================================================================
+       SCREEN 1: SOCKET SIMULATOR STYLES
+       ========================================================================= */
     .mode-tabs {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
-      margin: 2px 14px 8px;
+      margin: 0 14px 8px;
       padding: 4px;
       background: var(--surface);
       border: 1.5px solid var(--surface-border);
@@ -264,7 +486,6 @@
       padding: 8px 4px;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: all 0.18s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -281,13 +502,12 @@
       color: #ffffff;
     }
 
-    /* ================= MODE CONTAINERS ================= */
     .mode-view {
       display: none;
       flex: 1;
       flex-direction: column;
       justify-content: space-between;
-      padding: 4px 14px 4px;
+      padding: 2px 14px 2px;
       overflow-y: auto;
       overflow-x: hidden;
     }
@@ -296,12 +516,11 @@
       display: flex;
     }
 
-    /* ================= MODE 1: SANDBOX ================= */
     .sandbox-top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
     }
 
     .tier-badge {
@@ -309,25 +528,15 @@
       background: var(--surface);
       border: 1.5px solid var(--surface-border);
       border-radius: var(--radius-md);
-      padding: 8px 12px;
+      padding: 8px 11px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       box-shadow: var(--card-shadow);
     }
 
-    .tier-info h3 {
-      margin: 0;
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .tier-info p {
-      margin: 2px 0 0;
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
+    .tier-info h3 { margin: 0; font-size: 13px; font-weight: 800; }
+    .tier-info p { margin: 2px 0 0; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
 
     .upgrade-btn {
       background: var(--accent);
@@ -341,11 +550,8 @@
       white-space: nowrap;
     }
 
-    body[data-theme="realism"] .upgrade-btn {
-      color: #ffffff;
-    }
+    body[data-theme="realism"] .upgrade-btn { color: #ffffff; }
 
-    /* Breaker Box in Sandbox */
     .breaker-widget {
       background: var(--surface);
       border: 1.5px solid var(--surface-border);
@@ -357,7 +563,7 @@
       gap: 4px;
       cursor: pointer;
       box-shadow: var(--card-shadow);
-      min-width: 78px;
+      min-width: 76px;
     }
 
     .breaker-widget.tripped {
@@ -370,13 +576,7 @@
       to { box-shadow: 0 0 18px rgba(217, 43, 43, 0.75); }
     }
 
-    .breaker-label {
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
+    .breaker-label { font-size: 9px; font-weight: 800; color: var(--text-muted); }
 
     .breaker-switch {
       width: 34px;
@@ -384,7 +584,6 @@
       border-radius: 4px;
       background: var(--success);
       position: relative;
-      transition: background 0.2s;
       border: 1.5px solid rgba(0,0,0,0.25);
     }
 
@@ -398,17 +597,9 @@
       color: #fff;
     }
 
-    .breaker-widget.tripped .breaker-switch {
-      background: var(--danger);
-    }
+    .breaker-widget.tripped .breaker-switch { background: var(--danger); }
+    .breaker-widget.tripped .breaker-switch::after { content: "0"; left: 5px; right: auto; }
 
-    .breaker-widget.tripped .breaker-switch::after {
-      content: "0";
-      left: 5px;
-      right: auto;
-    }
-
-    /* Central Socket Stage */
     .socket-stage {
       position: relative;
       flex: 1;
@@ -416,7 +607,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 245px;
+      min-height: 230px;
     }
 
     .oscilloscope-bg {
@@ -425,18 +616,15 @@
       height: 120px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s;
     }
 
     body[data-theme="blueprint"] .oscilloscope-bg,
-    body[data-theme="neon"] .oscilloscope-bg {
-      opacity: 0.45;
-    }
+    body[data-theme="neon"] .oscilloscope-bg { opacity: 0.45; }
 
     .socket-unit {
       position: relative;
-      width: 196px;
-      height: 196px;
+      width: 190px;
+      height: 190px;
       border-radius: 34px;
       background: var(--socket-plate);
       box-shadow: var(--socket-shadow);
@@ -445,17 +633,9 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.1s ease, filter 0.3s ease;
     }
 
-    body[data-theme="pixel"] .socket-unit {
-      border-radius: 6px;
-      border: 4px solid #000;
-    }
-
-    .socket-unit:active {
-      transform: scale(0.97);
-    }
+    body[data-theme="pixel"] .socket-unit { border-radius: 6px; border: 4px solid #000; }
 
     .socket-heat-overlay {
       position: absolute;
@@ -464,26 +644,23 @@
       background: radial-gradient(circle, rgba(255, 65, 20, 0.65), rgba(255, 20, 0, 0.25));
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s;
     }
 
     .socket-well {
       position: relative;
-      width: 136px;
-      height: 136px;
+      width: 132px;
+      height: 132px;
       border-radius: 50%;
       background: var(--socket-well);
       border: 2px solid rgba(0, 0, 0, 0.18);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 34px;
+      gap: 32px;
       box-shadow: inset 0 6px 14px rgba(0,0,0,0.28);
     }
 
-    body[data-theme="pixel"] .socket-well {
-      border-radius: 4px;
-    }
+    body[data-theme="pixel"] .socket-well { border-radius: 4px; }
 
     .ground-pin {
       position: absolute;
@@ -507,17 +684,10 @@
       background: var(--hole-fill);
       border: 3px solid var(--hole-rim);
       box-shadow: inset 0 3px 6px #000;
-      position: relative;
-      transition: box-shadow 0.2s;
     }
 
-    body[data-theme="pixel"] .socket-hole {
-      border-radius: 2px;
-    }
-
-    .socket-hole.live-glow {
-      box-shadow: 0 0 14px var(--accent), inset 0 0 6px var(--accent);
-    }
+    body[data-theme="pixel"] .socket-hole { border-radius: 2px; }
+    .socket-hole.live-glow { box-shadow: 0 0 14px var(--accent), inset 0 0 6px var(--accent); }
 
     .center-screw {
       position: absolute;
@@ -528,23 +698,11 @@
       border: 1px solid #4a453e;
     }
 
-    .center-screw::after {
-      content: "";
-      position: absolute;
-      top: 4px;
-      left: 1px;
-      right: 1px;
-      height: 1.5px;
-      background: #2b2723;
-      transform: rotate(-30deg);
-    }
-
-    /* Plugged Visual Overlay */
     .plugged-visual {
       position: absolute;
-      width: 122px;
-      height: 122px;
-      border-radius: 28px;
+      width: 118px;
+      height: 118px;
+      border-radius: 26px;
       background: linear-gradient(145deg, #2d313d, #181a20);
       border: 2px solid rgba(255,255,255,0.18);
       box-shadow: 0 14px 28px rgba(0,0,0,0.55);
@@ -559,44 +717,16 @@
       z-index: 5;
     }
 
-    .plugged-visual.inserted {
-      transform: scale(1) translateY(0);
-      opacity: 1;
-    }
+    .plugged-visual.inserted { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+    .plugged-visual.forbidden-style { background: linear-gradient(145deg, #7f1d1d, #450a0a); border-color: #ef4444; }
+    .plugged-icon { font-size: 36px; line-height: 1; }
+    .plugged-name { font-size: 10px; font-weight: 700; color: #f8fafc; margin-top: 4px; text-align: center; padding: 0 6px; }
+    .plugged-cord { position: absolute; bottom: -52px; width: 12px; height: 56px; background: linear-gradient(90deg, #111, #3a3f4b, #111); border-radius: 0 0 8px 8px; }
 
-    .plugged-visual.forbidden-style {
-      background: linear-gradient(145deg, #7f1d1d, #450a0a);
-      border-color: #ef4444;
-    }
-
-    .plugged-icon {
-      font-size: 38px;
-      line-height: 1;
-    }
-
-    .plugged-name {
-      font-size: 10px;
-      font-weight: 700;
-      color: #f8fafc;
-      margin-top: 4px;
-      text-align: center;
-      padding: 0 6px;
-    }
-
-    .plugged-cord {
-      position: absolute;
-      bottom: -58px;
-      width: 12px;
-      height: 62px;
-      background: linear-gradient(90deg, #111, #3a3f4b, #111);
-      border-radius: 0 0 8px 8px;
-    }
-
-    /* Telemetry Strip below Socket */
     .telemetry-bar {
       width: 100%;
       max-width: 360px;
-      margin-top: 14px;
+      margin-top: 12px;
       background: var(--surface);
       border: 1.5px solid var(--surface-border);
       border-radius: var(--radius-md);
@@ -607,461 +737,319 @@
       box-shadow: var(--card-shadow);
     }
 
-    .telemetry-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      font-weight: 700;
-    }
+    .telemetry-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; }
+    .progress-track { width: 100%; height: 8px; background: rgba(0, 0, 0, 0.22); border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--success), #f59e0b, var(--danger)); transition: width 0.15s ease; }
+    .action-hint { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 5px; font-weight: 600; }
 
-    .progress-track {
-      width: 100%;
-      height: 8px;
-      background: rgba(0, 0, 0, 0.22);
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--success), #f59e0b, var(--danger));
-      transition: width 0.15s ease;
-    }
-
-    .action-hint {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-align: center;
-      margin-top: 6px;
-      font-weight: 600;
-    }
-
-    /* Item Dock */
-    .item-dock-wrapper {
-      margin-top: 6px;
-    }
-
-    .dock-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-      padding: 0 2px;
-    }
-
-    .item-dock {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 4px 2px 8px;
-      scrollbar-width: none;
-    }
-
-    .item-dock::-webkit-scrollbar {
-      display: none;
-    }
+    .item-dock-wrapper { margin-top: 4px; }
+    .dock-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 5px; }
+    .item-dock { display: flex; gap: 8px; overflow-x: auto; padding: 3px 2px 6px; scrollbar-width: none; }
+    .item-dock::-webkit-scrollbar { display: none; }
 
     .item-card {
-      flex: 0 0 86px;
+      flex: 0 0 84px;
       background: var(--surface);
       border: 2px solid var(--surface-border);
       border-radius: var(--radius-md);
-      padding: 8px 6px;
+      padding: 7px 5px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
       cursor: pointer;
-      position: relative;
-      box-shadow: var(--card-shadow);
-      transition: transform 0.14s ease, border-color 0.15s ease;
-    }
-
-    .item-card.selected {
-      border-color: var(--accent);
-      transform: translateY(-3px);
-    }
-
-    .item-card.locked {
-      opacity: 0.72;
-    }
-
-    .item-card.danger-item {
-      border-color: rgba(217, 43, 43, 0.45);
-    }
-
-    .item-emoji {
-      font-size: 24px;
-      margin-bottom: 4px;
-    }
-
-    .item-title {
-      font-size: 10px;
-      font-weight: 800;
-      line-height: 1.15;
-      height: 23px;
-      display: flex;
-      align-items: center;
-    }
-
-    .item-watts {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      margin-top: 3px;
-    }
-
-    .item-lock-tag {
-      margin-top: 3px;
-      font-size: 9px;
-      font-weight: 800;
-      background: var(--accent);
-      color: #0b0e14;
-      padding: 2px 6px;
-      border-radius: 6px;
-    }
-
-    /* ================= MODE 2: ELECTRICIAN SIMULATOR ================= */
-    .elec-card {
-      background: var(--surface);
-      border: 1.5px solid var(--surface-border);
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
       box-shadow: var(--card-shadow);
     }
 
-    .elec-order-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
+    .item-card.selected { border-color: var(--accent); transform: translateY(-2px); }
+    .item-card.locked { opacity: 0.72; }
+    .item-card.danger-item { border-color: rgba(217, 43, 43, 0.45); }
+    .item-emoji { font-size: 22px; margin-bottom: 3px; }
+    .item-title { font-size: 10px; font-weight: 800; line-height: 1.15; height: 22px; display: flex; align-items: center; }
+    .item-watts { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 2px; }
+    .item-lock-tag { margin-top: 2px; font-size: 9px; font-weight: 800; background: var(--accent); color: #0b0e14; padding: 2px 6px; border-radius: 6px; }
 
-    .elec-badge {
-      font-size: 11px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: var(--accent);
-      color: #0b0e14;
-    }
+    /* Electrician Mode */
+    .elec-card { background: var(--surface); border: 1.5px solid var(--surface-border); border-radius: var(--radius-md); padding: 10px 12px; box-shadow: var(--card-shadow); }
+    .elec-order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .elec-badge { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: var(--accent); color: #0b0e14; }
+    .elec-desc { font-size: 12px; line-height: 1.35; margin: 4px 0 0; }
+    .wiring-board { position: relative; flex: 1; min-height: 230px; margin: 8px 0; background: var(--surface); border: 2px solid var(--surface-border); border-radius: var(--radius-lg); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: var(--card-shadow); }
+    #wiringSvg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+    .terminals-row, .cables-row { display: flex; justify-content: space-around; align-items: center; z-index: 5; }
+    .terminal-node { width: 74px; padding: 8px 4px; border-radius: var(--radius-sm); background: rgba(0, 0, 0, 0.22); border: 2px solid var(--surface-border); display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+    .terminal-node.connected { border-color: var(--success); }
+    .terminal-screw { width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #f1c40f, #b7950b); border: 2px solid #5c4904; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #1f1902; }
+    .terminal-label { font-size: 11px; font-weight: 800; }
+    .cable-node { width: 78px; padding: 8px 4px; border-radius: var(--radius-sm); background: rgba(0, 0, 0, 0.18); border: 2px solid var(--surface-border); display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+    .cable-node.selected { border-color: var(--accent); transform: translateY(-3px); }
+    .cable-sheath { width: 18px; height: 34px; border-radius: 4px; position: relative; border: 1.5px solid rgba(0,0,0,0.4); }
+    .cable-tip { position: absolute; top: -10px; left: 4px; width: 6px; height: 10px; background: #e67e22; border-radius: 2px 2px 0 0; opacity: 0; }
+    .cable-node.stripped .cable-tip { opacity: 1; }
+    .cable-status { font-size: 9px; font-weight: 800; color: var(--text-muted); }
+    .cable-node.stripped .cable-status { color: var(--success); }
+    .breaker-selector { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+    .amp-btn { flex: 1; padding: 8px 4px; border-radius: var(--radius-sm); border: 1.5px solid var(--surface-border); background: var(--surface); color: var(--text-main); font-family: var(--font-mono); font-size: 12px; font-weight: 800; cursor: pointer; }
+    .amp-btn.active { background: var(--accent); color: #0b0e14; border-color: var(--accent); }
+    .power-test-btn { width: 100%; padding: 12px; border: none; border-radius: var(--radius-md); background: var(--success); color: #ffffff; font-family: var(--font-main); font-size: 13px; font-weight: 900; cursor: pointer; }
+    .elec-feedback { margin-top: 6px; font-size: 12px; font-weight: 700; text-align: center; min-height: 18px; }
 
-    .elec-desc {
-      font-size: 12px;
-      line-height: 1.35;
-      margin: 4px 0 0;
-    }
+    /* Arcade Mode */
+    .arcade-hud { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1.5px solid var(--surface-border); border-radius: var(--radius-md); padding: 8px 12px; box-shadow: var(--card-shadow); }
+    .arcade-hearts { font-size: 16px; letter-spacing: 2px; }
+    .arcade-voltage { font-family: var(--font-mono); font-size: 13px; font-weight: 900; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.2); }
+    .arcade-voltage.surge { background: var(--danger); color: #fff; animation: pulseDanger 0.4s infinite alternate; }
+    .power-strip { flex: 1; margin: 10px 0; background: var(--surface); border: 2px solid var(--surface-border); border-radius: var(--radius-lg); padding: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: center; box-shadow: var(--card-shadow); }
+    .strip-slot { background: rgba(0, 0, 0, 0.18); border: 2px solid var(--surface-border); border-radius: var(--radius-md); padding: 10px 8px; min-height: 102px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
+    .strip-slot.occupied { background: var(--surface-solid); border-color: var(--accent); }
+    .strip-slot.overheating { border-color: var(--danger); animation: pulseDanger 0.35s infinite alternate; }
+    .slot-empty-holes { display: flex; gap: 14px; opacity: 0.55; }
+    .slot-empty-holes span { width: 12px; height: 12px; border-radius: 50%; background: var(--hole-fill); border: 2px solid var(--hole-rim); }
+    .slot-heat-bar { width: 85%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+    .slot-heat-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); }
+    .arcade-controls { display: flex; gap: 8px; }
+    .arcade-btn { flex: 1; padding: 12px; border: none; border-radius: var(--radius-md); background: var(--accent); color: #0b0e14; font-family: var(--font-main); font-size: 13px; font-weight: 900; cursor: pointer; }
+    body[data-theme="realism"] .arcade-btn { color: #fff; }
+    .arcade-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-    .wiring-board {
+    /* =========================================================================
+       SCREEN 2: NIGHT LIGHTHOUSE (МЕДИТАТИВНЫЙ МИКРО-СИМУЛЯТОР)
+       ========================================================================= */
+    #screen-lighthouse {
       position: relative;
+      background: #071120;
+      color: #f1f5f9;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    #lighthouseCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .lh-ui-layer {
+      position: relative;
+      z-index: 10;
       flex: 1;
-      min-height: 250px;
-      margin: 8px 0;
-      background: var(--surface);
-      border: 2px solid var(--surface-border);
-      border-radius: var(--radius-lg);
-      padding: 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: var(--card-shadow);
+      pointer-events: none;
     }
 
-    #wiringSvg {
+    .lh-ui-layer > * {
+      pointer-events: auto;
+    }
+
+    /* Interactive Salt-Wipe Lens Zone overlaid on the Lighthouse Lantern */
+    .lens-wipe-zone {
+      position: relative;
+      margin: 4px auto 0;
+      width: 196px;
+      height: 146px;
+      border-radius: 28px;
+      border: 1.5px dashed rgba(186, 230, 253, 0.35);
+      background: rgba(15, 23, 42, 0.14);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 8px;
+      touch-action: none;
+      cursor: grab;
+      overflow: hidden;
+    }
+
+    #saltOverlayCanvas {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 2;
     }
 
-    .terminals-row, .cables-row {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: 5;
-    }
-
-    .terminal-node {
-      width: 74px;
-      padding: 8px 4px;
-      border-radius: var(--radius-sm);
-      background: rgba(0, 0, 0, 0.22);
-      border: 2px solid var(--surface-border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-    }
-
-    .terminal-node.connected {
-      border-color: var(--success);
-    }
-
-    .terminal-screw {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #f1c40f, #b7950b);
-      border: 2px solid #5c4904;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 900;
-      color: #1f1902;
-    }
-
-    .terminal-label {
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .cable-node {
-      width: 78px;
-      padding: 8px 4px;
-      border-radius: var(--radius-sm);
-      background: rgba(0, 0, 0, 0.18);
-      border: 2px solid var(--surface-border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-      transition: transform 0.12s;
-    }
-
-    .cable-node.selected {
-      border-color: var(--accent);
-      transform: translateY(-3px);
-    }
-
-    .cable-sheath {
-      width: 18px;
-      height: 36px;
-      border-radius: 4px;
+    .lens-badge {
       position: relative;
-      border: 1.5px solid rgba(0,0,0,0.4);
+      z-index: 3;
+      background: rgba(9, 17, 32, 0.72);
+      border: 1px solid rgba(186, 230, 253, 0.25);
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #e0f2fe;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
     }
 
-    .cable-tip {
-      position: absolute;
-      top: -10px;
-      left: 4px;
-      width: 6px;
-      height: 10px;
-      background: #e67e22;
-      border-radius: 2px 2px 0 0;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .cable-node.stripped .cable-tip {
-      opacity: 1;
-    }
-
-    .cable-status {
-      font-size: 9px;
-      font-weight: 800;
-      color: var(--text-muted);
-    }
-
-    .cable-node.stripped .cable-status {
-      color: var(--success);
-    }
-
-    .breaker-selector {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .amp-btn {
-      flex: 1;
-      padding: 8px 4px;
-      border-radius: var(--radius-sm);
-      border: 1.5px solid var(--surface-border);
-      background: var(--surface);
-      color: var(--text-main);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-    }
-
-    .amp-btn.active {
-      background: var(--accent);
-      color: #0b0e14;
-      border-color: var(--accent);
-    }
-
-    .power-test-btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--success);
-      color: #ffffff;
-      font-family: var(--font-main);
-      font-size: 14px;
-      font-weight: 900;
-      letter-spacing: 0.4px;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(35, 140, 71, 0.35);
-    }
-
-    .elec-feedback {
+    .lh-ship-banner {
+      align-self: center;
       margin-top: 6px;
+      background: rgba(9, 17, 32, 0.76);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 999px;
+      padding: 6px 14px;
       font-size: 12px;
       font-weight: 700;
+      color: #f8fafc;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       text-align: center;
-      min-height: 18px;
+      max-width: 90%;
+      transition: border-color 0.3s, transform 0.2s;
     }
 
-    /* ================= MODE 3: ARCADE OVERLOAD ================= */
-    .arcade-hud {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--surface);
-      border: 1.5px solid var(--surface-border);
-      border-radius: var(--radius-md);
-      padding: 8px 12px;
-      box-shadow: var(--card-shadow);
+    .lh-ship-banner.fog-alert {
+      border-color: #fbbf24;
+      color: #fef08a;
     }
 
-    .arcade-hearts {
-      font-size: 16px;
-      letter-spacing: 2px;
-    }
-
-    .arcade-voltage {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      font-weight: 900;
-      padding: 4px 8px;
-      border-radius: 6px;
-      background: rgba(0,0,0,0.2);
-    }
-
-    .arcade-voltage.surge {
-      background: var(--danger);
-      color: #fff;
-      animation: pulseDanger 0.4s infinite alternate;
-    }
-
-    .power-strip {
-      flex: 1;
-      margin: 10px 0;
-      background: var(--surface);
-      border: 2px solid var(--surface-border);
-      border-radius: var(--radius-lg);
-      padding: 12px;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      align-content: center;
-      box-shadow: var(--card-shadow);
-    }
-
-    .strip-slot {
-      background: rgba(0, 0, 0, 0.18);
-      border: 2px solid var(--surface-border);
-      border-radius: var(--radius-md);
-      padding: 10px 8px;
-      min-height: 106px;
+    .lh-bottom-panel {
+      padding: 0 14px 4px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      cursor: pointer;
-      transition: transform 0.1s, border-color 0.2s;
+      gap: 10px;
     }
 
-    .strip-slot:active {
-      transform: scale(0.95);
+    .lh-meters-card {
+      background: rgba(9, 17, 32, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 18px;
+      padding: 10px 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
     }
 
-    .strip-slot.occupied {
-      background: var(--surface-solid);
-      border-color: var(--accent);
-    }
-
-    .strip-slot.overheating {
-      border-color: var(--danger);
-      animation: pulseDanger 0.35s infinite alternate;
-    }
-
-    .slot-empty-holes {
+    .lh-meter {
       display: flex;
-      gap: 14px;
-      opacity: 0.55;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    .slot-empty-holes span {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--hole-fill);
-      border: 2px solid var(--hole-rim);
+    .lh-meter-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #cbd5e1;
     }
 
-    .slot-heat-bar {
-      width: 85%;
+    .lh-meter-bar {
+      width: 100%;
       height: 6px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 99px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 999px;
       overflow: hidden;
-      margin-top: 6px;
     }
 
-    .slot-heat-fill {
+    .lh-meter-fill {
       height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+      border-radius: 999px;
+      transition: width 0.2s ease;
     }
 
-    .arcade-controls {
-      display: flex;
+    .lh-controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr 1fr;
       gap: 8px;
     }
 
-    .arcade-btn {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: var(--radius-md);
-      background: var(--accent);
-      color: #0b0e14;
+    .lh-action-btn {
+      border: 1.5px solid rgba(255,255,255,0.16);
+      border-radius: 18px;
+      padding: 12px 6px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
       font-family: var(--font-main);
-      font-size: 13px;
-      font-weight: 900;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
       cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform 0.1s ease, border-color 0.2s, background 0.2s;
     }
 
-    body[data-theme="realism"] .arcade-btn {
-      color: #fff;
+    .lh-action-btn:active {
+      transform: scale(0.95);
     }
 
-    .arcade-btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
+    .lh-action-btn .lh-btn-icon {
+      font-size: 22px;
+      line-height: 1;
     }
 
-    /* ================= MODALS (VISUAL SETTINGS & UPGRADES) ================= */
+    .lh-action-btn .lh-btn-label {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .lh-action-btn .lh-btn-sub {
+      font-size: 9.5px;
+      color: #94a3b8;
+    }
+
+    .lh-action-btn.coal-btn {
+      border-color: rgba(251, 146, 60, 0.45);
+    }
+
+    .lh-action-btn.horn-btn {
+      background: linear-gradient(145deg, rgba(14, 116, 144, 0.85), rgba(15, 23, 42, 0.92));
+      border-color: rgba(56, 189, 248, 0.55);
+    }
+
+    .lh-action-btn.horn-btn.pulsing {
+      border-color: #fbbf24;
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.45);
+    }
+
+    .lh-action-btn.shop-btn {
+      border-color: rgba(167, 139, 250, 0.45);
+    }
+
+    /* Postcard Toast Notification */
+    .postcard-toast {
+      position: fixed;
+      top: calc(max(var(--safe-top), 12px) + 48px);
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: linear-gradient(135deg, #fefce8, #fef3c7);
+      color: #451a03;
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 10px 14px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+      z-index: 95;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      max-width: 330px;
+      width: 90%;
+    }
+
+    .postcard-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* ================= MODALS ================= */
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.65);
+      background: rgba(0, 0, 0, 0.68);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       display: none;
@@ -1079,12 +1067,22 @@
     .modal-sheet {
       width: 100%;
       max-width: 440px;
-      background: var(--surface-solid);
-      border: 1.5px solid var(--surface-border);
+      max-height: 82vh;
+      overflow-y: auto;
+      background: var(--surface-solid, #111827);
+      color: var(--text-main, #f8fafc);
+      border: 1.5px solid var(--surface-border, rgba(255,255,255,0.18));
       border-radius: var(--radius-lg);
       padding: 16px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
       animation: slideUp 0.22s ease-out;
+    }
+
+    #lighthouseShopModal .modal-sheet,
+    #postcardsModal .modal-sheet {
+      background: #0f172a;
+      color: #f8fafc;
+      border-color: rgba(148, 163, 184, 0.28);
     }
 
     @keyframes slideUp {
@@ -1099,16 +1097,12 @@
       margin-bottom: 12px;
     }
 
-    .modal-header h2 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 900;
-    }
+    .modal-header h2 { margin: 0; font-size: 16px; font-weight: 900; }
 
     .close-modal {
-      background: rgba(128, 128, 128, 0.2);
+      background: rgba(128, 128, 128, 0.22);
       border: none;
-      color: var(--text-main);
+      color: inherit;
       width: 30px;
       height: 30px;
       border-radius: 50%;
@@ -1116,111 +1110,177 @@
       cursor: pointer;
     }
 
-    .theme-grid {
+    .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+    .theme-option { border: 2px solid var(--surface-border); border-radius: var(--radius-md); padding: 10px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; background: rgba(128, 128, 128, 0.08); }
+    .theme-option.active { border-color: var(--accent); background: rgba(128, 128, 128, 0.16); }
+    .theme-swatch { height: 34px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
+    .theme-option strong { font-size: 12px; }
+    .theme-option span { font-size: 10px; color: var(--text-muted); }
+
+    .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--surface-border); font-size: 13px; font-weight: 700; }
+    .toggle-pill { padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--surface-border); background: var(--accent); color: #0b0e14; font-size: 11px; font-weight: 800; cursor: pointer; }
+    body[data-theme="realism"] .toggle-pill { color: #fff; }
+    .toggle-pill.off { background: transparent; color: var(--text-muted); }
+
+    .upgrade-list { display: flex; flex-direction: column; gap: 8px; }
+    .upgrade-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: var(--radius-md); border: 1.5px solid rgba(148,163,184,0.24); background: rgba(255, 255, 255, 0.05); gap: 10px; }
+    .upgrade-item h4 { margin: 0; font-size: 13px; }
+    .upgrade-item p { margin: 2px 0 0; font-size: 11px; opacity: 0.78; }
+
+    /* Lighthouse Shop Tabs & Postcards */
+    .lh-modal-tabs {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .theme-option {
-      border: 2px solid var(--surface-border);
-      border-radius: var(--radius-md);
-      padding: 10px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
+      grid-template-columns: 1fr 1fr;
       gap: 6px;
-      background: rgba(128, 128, 128, 0.08);
+      margin-bottom: 12px;
+      background: rgba(255,255,255,0.06);
+      padding: 4px;
+      border-radius: 12px;
     }
 
-    .theme-option.active {
-      border-color: var(--accent);
-      background: rgba(128, 128, 128, 0.16);
-    }
-
-    .theme-swatch {
-      height: 34px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .theme-option strong {
+    .lh-modal-tab {
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-family: var(--font-main);
       font-size: 12px;
-    }
-
-    .theme-option span {
-      font-size: 10px;
-      color: var(--text-muted);
-    }
-
-    .setting-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-top: 1px solid var(--surface-border);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .toggle-pill {
-      padding: 6px 12px;
-      border-radius: 999px;
-      border: 1.5px solid var(--surface-border);
-      background: var(--accent);
-      color: #0b0e14;
-      font-size: 11px;
       font-weight: 800;
+      padding: 8px;
+      border-radius: 9px;
       cursor: pointer;
     }
 
-    body[data-theme="realism"] .toggle-pill {
-      color: #fff;
+    .lh-modal-tab.active {
+      background: #38bdf8;
+      color: #090d16;
     }
 
-    .toggle-pill.off {
-      background: transparent;
-      color: var(--text-muted);
-    }
-
-    .upgrade-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .upgrade-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px;
-      border-radius: var(--radius-md);
-      border: 1.5px solid var(--surface-border);
-      background: rgba(128, 128, 128, 0.07);
+    .postcard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
       gap: 10px;
     }
 
-    .upgrade-item h4 {
+    .postcard-item {
+      background: linear-gradient(135deg, #fefce8, #fde68a);
+      color: #451a03;
+      border-radius: 14px;
+      padding: 12px;
+      border: 1.5px solid #f59e0b;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .postcard-stamp {
+      width: 52px;
+      height: 58px;
+      background: #fffbeb;
+      border: 2px dashed #d97706;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .postcard-body h4 {
       margin: 0;
       font-size: 13px;
+      font-weight: 900;
     }
 
-    .upgrade-item p {
-      margin: 2px 0 0;
-      font-size: 11px;
-      color: var(--text-muted);
+    .postcard-body p {
+      margin: 3px 0 0;
+      font-size: 11.5px;
+      line-height: 1.35;
+      color: #78350f;
+    }
+
+    .postcard-meta {
+      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #b45309;
     }
   </style>
 </head>
-<body data-theme="realism">
+<body>
   <canvas id="fxCanvas"></canvas>
 
-  <div class="app-shell" id="appShell">
-    <!-- TOP BAR -->
+  <!-- Postcard Earned Toast -->
+  <div class="postcard-toast" id="postcardToast">
+    <div style="font-size:28px;" id="toastCardIcon">⛵</div>
+    <div>
+      <div style="font-size:11px;font-weight:900;text-transform:uppercase;color:#b45309;">Новая открытка от капитана!</div>
+      <div style="font-size:13px;font-weight:800;" id="toastCardTitle">Шхуна «Полярная звезда»</div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SCREEN 0: MAIN MENU (GAME SELECTION HUB)
+       ========================================================================= -->
+  <main class="screen active" id="screen-menu">
+    <header class="hub-header">
+      <div class="hub-title-block">
+        <h1>Игровой уголок</h1>
+        <p>Выбери симулятор под настроение</p>
+      </div>
+      <button class="hub-sound-btn" id="hubSoundBtn" title="Звук">🔊</button>
+    </header>
+
+    <div class="hub-wallet-bar">
+      <div class="hub-chip">⚡ <span id="hubCoinsVal">50</span> Вольт-коинов</div>
+      <div class="hub-chip">🔶 <span id="hubAmberVal">30</span> Янтаря</div>
+      <div class="hub-chip">📮 <span id="hubCardsVal">0/8</span> Открыток</div>
+    </div>
+
+    <div class="games-grid">
+      <!-- GAME 1 CARD -->
+      <article class="game-card socket-card" id="launchSocketBtn">
+        <div class="game-card-top">
+          <div class="game-icon-box">🔌</div>
+          <span class="game-tag">Аркада • 3 режима</span>
+        </div>
+        <div>
+          <h2>Симулятор розетки 220В</h2>
+          <p>Песочница с вилками и короткими замыканиями, монтаж щитка электрика и аркада на защиту от перегрузки. 4 визуальных стиля.</p>
+        </div>
+        <div class="game-card-footer">
+          <span class="game-stat-mini" id="hubSocketStat">Розетка: Ур. 1 • Рекорд: 0</span>
+          <span class="play-pill">Играть →</span>
+        </div>
+      </article>
+
+      <!-- GAME 2 CARD -->
+      <article class="game-card lighthouse-card" id="launchLighthouseBtn">
+        <div class="game-card-top">
+          <div class="game-icon-box">🏮</div>
+          <span class="game-tag">Медитативный • Уют</span>
+        </div>
+        <div>
+          <h2>Ночной маяк</h2>
+          <p>Следи за крошечным маяком на скале: подкидывай уголь в топку, протирай свайпами линзу от соли и гуди в тумане для кораблей.</p>
+        </div>
+        <div class="game-card-footer">
+          <span class="game-stat-mini" id="hubLighthouseStat">Кораблей проведено: 0</span>
+          <span class="play-pill">На вахту →</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="hub-footer-note">Весь прогресс автоматически сохраняется на устройстве</div>
+  </main>
+
+  <!-- =========================================================================
+       SCREEN 1: SOCKET SIMULATOR GAME
+       ========================================================================= -->
+  <section class="screen" id="screen-socket">
     <header class="top-bar">
+      <button class="back-menu-btn" data-go-menu>🏠 Меню</button>
       <div class="stats-cluster">
-        <div class="stat-pill">⚡ <span class="val" id="coinsDisplay">0</span> В-к</div>
+        <div class="stat-pill">⚡ <span class="val" id="coinsDisplay">0</span></div>
         <div class="stat-pill">🔌 <span class="val" id="wattsDisplay">0 Вт</span></div>
       </div>
       <div class="icon-actions">
@@ -1229,15 +1289,14 @@
       </div>
     </header>
 
-    <!-- 3 GAMEPLAY MODES TABS -->
     <nav class="mode-tabs">
       <button class="mode-tab active" data-mode="sandbox">🔌 Песочница</button>
       <button class="mode-tab" data-mode="electrician">🛠️ Электрик</button>
       <button class="mode-tab" data-mode="arcade">⚡ Перегрузка</button>
     </nav>
 
-    <!-- ==================== MODE 1: SANDBOX / CLICKER ==================== -->
-    <section class="mode-view active" id="view-sandbox">
+    <!-- MODE 1: SANDBOX -->
+    <div class="mode-view active" id="view-sandbox">
       <div class="sandbox-top-row">
         <div class="tier-badge">
           <div class="tier-info">
@@ -1246,7 +1305,7 @@
           </div>
           <button class="upgrade-btn" id="openUpgradesBtn">Апгрейд ⬆</button>
         </div>
-        <div class="breaker-widget" id="sandboxBreaker" title="Автомат защиты">
+        <div class="breaker-widget" id="sandboxBreaker">
           <span class="breaker-label" id="breakerStatusText">АВТ ВКЛ</span>
           <div class="breaker-switch"></div>
         </div>
@@ -1293,21 +1352,20 @@
         </div>
         <div class="item-dock" id="itemDock"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- ==================== MODE 2: ELECTRICIAN SIMULATOR ==================== -->
-    <section class="mode-view" id="view-electrician">
+    <!-- MODE 2: ELECTRICIAN -->
+    <div class="mode-view" id="view-electrician">
       <div class="elec-card">
         <div class="elec-order-header">
           <span class="elec-badge" id="elecLevelBadge">Заказ #1</span>
           <span style="font-size:11px;font-weight:800;color:var(--accent);" id="elecRewardBadge">+150 В-к</span>
         </div>
-        <p class="elec-desc" id="elecTaskDesc">Подключите евророзетку для электрочайника (2200 Вт). Зачистите жилы, соедините L, N, PE и выберите автомат.</p>
+        <p class="elec-desc" id="elecTaskDesc">Подключите евророзетку для электрочайника.</p>
       </div>
 
       <div class="wiring-board" id="wiringBoard">
         <svg id="wiringSvg"></svg>
-
         <div class="terminals-row">
           <div class="terminal-node" data-term="L" id="term-L">
             <div class="terminal-screw">L</div>
@@ -1322,11 +1380,9 @@
             <span class="terminal-label">Земля (PE)</span>
           </div>
         </div>
-
         <div style="text-align:center;font-size:10px;color:var(--text-muted);z-index:3;">
-          1. Нажми на кабель снизу (зачистка) → 2. Выбери кабель и нажми на клемму сверху
+          1. Нажми на жилу снизу (зачистка) → 2. Нажми на клемму сверху
         </div>
-
         <div class="cables-row">
           <div class="cable-node" data-wire="L" id="wire-L">
             <div class="cable-sheath" style="background:#b91c1c;"><div class="cable-tip"></div></div>
@@ -1357,10 +1413,10 @@
         <button class="power-test-btn" id="elecTestBtn">⚡ ПОДАТЬ НАПРЯЖЕНИЕ (ПРОВЕРКА)</button>
         <div class="elec-feedback" id="elecFeedback"></div>
       </div>
-    </section>
+    </div>
 
-    <!-- ==================== MODE 3: ARCADE OVERLOAD ==================== -->
-    <section class="mode-view" id="view-arcade">
+    <!-- MODE 3: ARCADE -->
+    <div class="mode-view" id="view-arcade">
       <div class="arcade-hud">
         <div>
           <div style="font-size:10px;color:var(--text-muted);font-weight:800;">СЧЁТ / РЕКОРД</div>
@@ -1372,25 +1428,90 @@
         <div class="arcade-hearts" id="arcadeLives">❤️❤️❤️</div>
       </div>
 
-      <div class="power-strip" id="powerStrip">
-        <!-- 4 dynamic slots injected via JS -->
-      </div>
+      <div class="power-strip" id="powerStrip"></div>
 
       <div class="arcade-controls">
         <button class="arcade-btn" id="arcadeStartBtn">▶ СТАРТ ИГРЫ</button>
         <button class="arcade-btn" id="arcadeCoolBtn" disabled>❄️ ОХЛАДИТЬ (ГОТОВО)</button>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 
-  <!-- ==================== VISUAL SETTINGS MODAL ==================== -->
+  <!-- =========================================================================
+       SCREEN 2: NIGHT LIGHTHOUSE (МЕДИТАТИВНЫЙ МИКРО-СИМУЛЯТОР)
+       ========================================================================= -->
+  <section class="screen" id="screen-lighthouse">
+    <canvas id="lighthouseCanvas"></canvas>
+
+    <div class="lh-ui-layer">
+      <header class="top-bar">
+        <button class="back-menu-btn" data-go-menu>🏠 Меню</button>
+        <div class="stats-cluster">
+          <div class="stat-pill">🔶 <span class="val" id="lhAmberDisplay">30</span></div>
+          <div class="stat-pill">🚢 <span class="val" id="lhShipsDisplay">0</span></div>
+        </div>
+        <div class="icon-actions">
+          <button class="icon-btn" id="lhPostcardsBtn" title="Открытки">📮</button>
+          <button class="icon-btn" id="lhSoundBtn" title="Звук моря">🔊</button>
+        </div>
+      </header>
+
+      <!-- Interactive Swipe Lens Zone -->
+      <div>
+        <div class="lens-wipe-zone" id="lensWipeZone">
+          <canvas id="saltOverlayCanvas" width="196" height="146"></canvas>
+          <div class="lens-badge" id="lensCleanBadge">🧽 Протри свайпами: 100%</div>
+        </div>
+        <div class="lh-ship-banner" id="lhShipBanner">Спокойная вахта. На горизонте чисто...</div>
+      </div>
+
+      <!-- Bottom Cozy Controls -->
+      <div class="lh-bottom-panel">
+        <div class="lh-meters-card">
+          <div class="lh-meter">
+            <div class="lh-meter-top"><span>🔥 Топка</span><span id="lhCoalPct">85%</span></div>
+            <div class="lh-meter-bar"><div class="lh-meter-fill" id="lhCoalBar" style="width:85%;background:#fb923c;"></div></div>
+          </div>
+          <div class="lh-meter">
+            <div class="lh-meter-top"><span>✨ Линза</span><span id="lhLensPct">100%</span></div>
+            <div class="lh-meter-bar"><div class="lh-meter-fill" id="lhLensBar" style="width:100%;background:#38bdf8;"></div></div>
+          </div>
+          <div class="lh-meter">
+            <div class="lh-meter-top"><span>🌫️ Туман</span><span id="lhFogPct">10%</span></div>
+            <div class="lh-meter-bar"><div class="lh-meter-fill" id="lhFogBar" style="width:10%;background:#94a3b8;"></div></div>
+          </div>
+        </div>
+
+        <div class="lh-controls-grid">
+          <button class="lh-action-btn coal-btn" id="lhAddCoalBtn">
+            <span class="lh-btn-icon">🪵</span>
+            <span class="lh-btn-label">Уголь в топку</span>
+            <span class="lh-btn-sub">+Жар луча</span>
+          </button>
+
+          <button class="lh-action-btn horn-btn" id="lhHornBtn">
+            <span class="lh-btn-icon">📯</span>
+            <span class="lh-btn-label">Туманный горн</span>
+            <span class="lh-btn-sub">Сигнал кораблям</span>
+          </button>
+
+          <button class="lh-action-btn shop-btn" id="lhShopBtn">
+            <span class="lh-btn-icon">🧭</span>
+            <span class="lh-btn-label">Мастерская</span>
+            <span class="lh-btn-sub">Детали и погода</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== MODALS FOR SOCKET SIMULATOR ==================== -->
   <div class="modal-backdrop" id="visualModal">
     <div class="modal-sheet">
       <div class="modal-header">
         <h2>🎨 Настройка визуала и звука</h2>
         <button class="close-modal" data-close="visualModal">✕</button>
       </div>
-
       <div class="theme-grid">
         <div class="theme-option active" data-set-theme="realism">
           <div class="theme-swatch" style="background:linear-gradient(135deg,#e6dfd5,#c4b5a2);"></div>
@@ -1413,19 +1534,17 @@
           <span>Инженерная схема и осциллограф</span>
         </div>
       </div>
-
       <div class="setting-row">
-        <span>🔊 Звуковые эффекты и гул 50 Гц</span>
+        <span>🔊 Звуковые эффекты</span>
         <button class="toggle-pill" id="modalSoundToggle">ВКЛЮЧЕНО</button>
       </div>
       <div class="setting-row">
-        <span>📳 Виброотклик и тряска экрана</span>
+        <span>📳 Виброотклик и тряска</span>
         <button class="toggle-pill" id="modalShakeToggle">ВКЛЮЧЕНО</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== UPGRADES MODAL ==================== -->
   <div class="modal-backdrop" id="upgradesModal">
     <div class="modal-sheet">
       <div class="modal-header">
@@ -1436,9 +1555,34 @@
     </div>
   </div>
 
+  <!-- ==================== MODALS FOR NIGHT LIGHTHOUSE ==================== -->
+  <div class="modal-backdrop" id="lighthouseShopModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>🧭 Мастерская смотрителя</h2>
+        <button class="close-modal" data-close="lighthouseShopModal">✕</button>
+      </div>
+      <div class="lh-modal-tabs">
+        <button class="lh-modal-tab active" data-lh-tab="parts">🏮 Детали маяка</button>
+        <button class="lh-modal-tab" data-lh-tab="weather">🌦️ Смена погоды</button>
+      </div>
+      <div class="upgrade-list" id="lhShopContent"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="postcardsModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>📮 Альбом морских открыток</h2>
+        <button class="close-modal" data-close="postcardsModal">✕</button>
+      </div>
+      <div class="postcard-grid" id="postcardsList"></div>
+    </div>
+  </div>
+
   <script>
     /* =========================================================================
-       1. PROCEDURAL WEB AUDIO ENGINE (NO EXTERNAL AUDIO FILES REQUIRED)
+       1. PROCEDURAL WEB AUDIO ENGINE (SOCKET SFX + LIGHTHOUSE AMBIENT & HORN)
        ========================================================================= */
     class SoundEngine {
       constructor() {
@@ -1446,6 +1590,8 @@
         this.enabled = true;
         this.humOsc = null;
         this.humGain = null;
+        this.seaGain = null;
+        this.activeScreen = 'menu';
       }
 
       init() {
@@ -1454,6 +1600,7 @@
           if (!AudioCtx) return;
           this.ctx = new AudioCtx();
           this.setupHum();
+          this.setupSeaAmbience();
         }
         if (this.ctx.state === 'suspended') {
           this.ctx.resume();
@@ -1466,11 +1613,9 @@
         this.humGain = this.ctx.createGain();
         this.humOsc.type = 'sawtooth';
         this.humOsc.frequency.setValueAtTime(50, this.ctx.currentTime);
-
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(140, this.ctx.currentTime);
-
         this.humGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
         this.humOsc.connect(filter);
         filter.connect(this.humGain);
@@ -1478,9 +1623,51 @@
         this.humOsc.start();
       }
 
+      setupSeaAmbience() {
+        if (!this.ctx) return;
+        // Soft brown-noise ocean waves
+        const bufferSize = this.ctx.sampleRate * 4;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          data[i] = (lastOut + (0.02 * white)) / 1.02;
+          lastOut = data[i];
+          data[i] *= 1.8;
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(340, this.ctx.currentTime);
+
+        this.seaGain = this.ctx.createGain();
+        this.seaGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+
+        noise.connect(filter);
+        filter.connect(this.seaGain);
+        this.seaGain.connect(this.ctx.destination);
+        noise.start();
+      }
+
+      updateAmbience() {
+        if (!this.ctx || !this.seaGain) return;
+        const shouldPlaySea = this.enabled && this.activeScreen === 'lighthouse';
+        const target = shouldPlaySea ? 0.055 : 0.0001;
+        this.seaGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.35);
+        if (this.activeScreen !== 'socket' && this.humGain) {
+          this.humGain.gain.setTargetAtTime(0.0001, this.ctx.currentTime, 0.1);
+        }
+      }
+
       updateHum(loadRatio) {
         if (!this.ctx || !this.humGain) return;
-        const target = (this.enabled && loadRatio > 0) ? Math.min(0.06, 0.008 + loadRatio * 0.045) : 0.0001;
+        const target = (this.enabled && this.activeScreen === 'socket' && loadRatio > 0)
+          ? Math.min(0.06, 0.008 + loadRatio * 0.045)
+          : 0.0001;
         this.humGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.08);
       }
 
@@ -1494,7 +1681,7 @@
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(pitch, now);
         osc.frequency.exponentialRampToValueAtTime(110, now + dur);
-        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.setValueAtTime(0.2, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -1502,15 +1689,8 @@
         osc.stop(now + dur);
       }
 
-      playPlugIn() {
-        this.playClick(420, 0.06);
-        setTimeout(() => this.playClick(780, 0.04), 35);
-      }
-
-      playPlugOut() {
-        this.playClick(640, 0.04);
-        setTimeout(() => this.playClick(300, 0.06), 30);
-      }
+      playPlugIn() { this.playClick(420, 0.06); setTimeout(() => this.playClick(780, 0.04), 35); }
+      playPlugOut() { this.playClick(640, 0.04); setTimeout(() => this.playClick(300, 0.06), 30); }
 
       playSpark(intensity = 1) {
         if (!this.enabled) return;
@@ -1525,19 +1705,14 @@
           const crackle = Math.random() > 0.72 ? (Math.random() * 2 - 1) : (Math.random() * 0.25 - 0.125);
           data[i] = crackle * Math.exp(-i / (bufferSize * 0.55));
         }
-
         const noise = this.ctx.createBufferSource();
         noise.buffer = buffer;
-
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.setValueAtTime(2400 + Math.random() * 1600, now);
-        filter.Q.setValueAtTime(1.8, now);
-
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(Math.min(0.45, 0.18 * intensity), now);
+        gain.gain.setValueAtTime(Math.min(0.42, 0.18 * intensity), now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
         noise.connect(filter);
         filter.connect(gain);
         gain.connect(this.ctx.destination);
@@ -1555,7 +1730,7 @@
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(135, now);
         osc.frequency.exponentialRampToValueAtTime(28, now + 0.42);
-        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.setValueAtTime(0.4, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -1574,7 +1749,7 @@
           const gain = this.ctx.createGain();
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, now);
-          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.setValueAtTime(0.14, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
@@ -1582,12 +1757,73 @@
           osc.stop(now + 0.26);
         });
       }
+
+      // Cozy Lighthouse Sounds
+      playFoghorn(isShipReply = false) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const dur = isShipReply ? 0.95 : 1.55;
+        const baseFreq = isShipReply ? 164.81 : 110.0; // E3 for ship, A2 deep warm horn for lighthouse
+
+        [baseFreq, baseFreq * 1.498].forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const filter = this.ctx.createBiquadFilter();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.linearRampToValueAtTime(freq * 0.97, now + dur);
+
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(isShipReply ? 380 : 290, now);
+
+          const peak = isShipReply ? 0.09 : (idx === 0 ? 0.22 : 0.11);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(peak, now + 0.22);
+          gain.gain.setValueAtTime(peak, now + dur - 0.35);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + dur + 0.02);
+        });
+      }
+
+      playCoalCrackle() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        this.playClick(260, 0.07);
+        setTimeout(() => this.playSpark(0.55), 40);
+      }
+
+      playGlassWipe() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(920 + Math.random() * 260, now);
+        osc.frequency.exponentialRampToValueAtTime(1380, now + 0.06);
+        gain.gain.setValueAtTime(0.045, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
     }
 
     const sound = new SoundEngine();
 
     /* =========================================================================
-       2. PARTICLE & SPARK FX SYSTEM (CANVAS)
+       2. GLOBAL FX OVERLAY CANVAS (SPARKS & FLOATING TEXT)
        ========================================================================= */
     const canvas = document.getElementById('fxCanvas');
     const ctx = canvas.getContext('2d');
@@ -1609,8 +1845,7 @@
         const angle = Math.random() * Math.PI * 2;
         const speed = 2.5 + Math.random() * 7.5;
         particles.push({
-          x,
-          y,
+          x, y,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed - 2,
           life: 1,
@@ -1620,7 +1855,6 @@
           type: 'spark'
         });
       }
-      // Also spawn 1-2 jagged electric arcs
       for (let a = 0; a < 2; a++) {
         arcs.push({
           x1: x + (Math.random() - 0.5) * 24,
@@ -1635,103 +1869,170 @@
 
     function spawnSmoke(x, y) {
       particles.push({
-        x: x + (Math.random() - 0.5) * 40,
-        y,
+        x: x + (Math.random() - 0.5) * 40, y,
         vx: (Math.random() - 0.5) * 0.8,
         vy: -1.2 - Math.random() * 1.2,
-        life: 1,
-        decay: 0.015,
-        size: 10 + Math.random() * 12,
-        color: 'rgba(180, 185, 195, 0.35)',
-        type: 'smoke'
+        life: 1, decay: 0.015, size: 10 + Math.random() * 12,
+        color: 'rgba(180, 185, 195, 0.35)', type: 'smoke'
       });
     }
 
     function spawnFloatingText(x, y, text, color = '#ffbe0b') {
-      floatTexts.push({ x, y, text, color, life: 1, vy: -1.4 });
+      floatTexts.push({ x, y, text, color, life: 1, vy: -1.3 });
     }
 
     function renderFX() {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        if (p.type === 'spark') {
-          p.vy += 0.28; // gravity
-          p.vx *= 0.98;
-        } else {
-          p.size += 0.25;
-        }
+        if (p.type === 'spark') { p.vy += 0.28; p.vx *= 0.98; }
+        else { p.size += 0.25; }
         p.life -= p.decay;
-
-        if (p.life <= 0) {
-          particles.splice(i, 1);
-          continue;
-        }
-
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.life);
         ctx.fillStyle = p.color;
         if (p.type === 'spark') {
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 10; ctx.shadowColor = p.color;
           ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
         } else {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
         }
         ctx.restore();
       }
-
       for (let i = arcs.length - 1; i >= 0; i--) {
         const arc = arcs[i];
         arc.life -= 0.14;
-        if (arc.life <= 0) {
-          arcs.splice(i, 1);
-          continue;
-        }
+        if (arc.life <= 0) { arcs.splice(i, 1); continue; }
         ctx.save();
-        ctx.globalAlpha = arc.life;
-        ctx.strokeStyle = arc.color;
-        ctx.lineWidth = 2.2;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = arc.color;
-        ctx.beginPath();
-        ctx.moveTo(arc.x1, arc.y1);
-        const midX = (arc.x1 + arc.x2) / 2 + (Math.random() - 0.5) * 34;
-        const midY = (arc.y1 + arc.y2) / 2 + (Math.random() - 0.5) * 34;
-        ctx.lineTo(midX, midY);
-        ctx.lineTo(arc.x2, arc.y2);
-        ctx.stroke();
+        ctx.globalAlpha = arc.life; ctx.strokeStyle = arc.color; ctx.lineWidth = 2.2;
+        ctx.shadowBlur = 12; ctx.shadowColor = arc.color;
+        ctx.beginPath(); ctx.moveTo(arc.x1, arc.y1);
+        ctx.lineTo((arc.x1 + arc.x2) / 2 + (Math.random() - 0.5) * 34, (arc.y1 + arc.y2) / 2 + (Math.random() - 0.5) * 34);
+        ctx.lineTo(arc.x2, arc.y2); ctx.stroke();
         ctx.restore();
       }
-
       for (let i = floatTexts.length - 1; i >= 0; i--) {
         const ft = floatTexts[i];
-        ft.y += ft.vy;
-        ft.life -= 0.022;
-        if (ft.life <= 0) {
-          floatTexts.splice(i, 1);
-          continue;
-        }
+        ft.y += ft.vy; ft.life -= 0.02;
+        if (ft.life <= 0) { floatTexts.splice(i, 1); continue; }
         ctx.save();
         ctx.globalAlpha = ft.life;
         ctx.font = '800 14px -apple-system, sans-serif';
-        ctx.fillStyle = ft.color;
-        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color; ctx.textAlign = 'center';
         ctx.fillText(ft.text, ft.x, ft.y);
         ctx.restore();
       }
-
       requestAnimationFrame(renderFX);
     }
     requestAnimationFrame(renderFX);
 
     /* =========================================================================
-       3. GAME STATE & PERSISTENCE
+       3. UNIFIED PERSISTENT STATE FOR BOTH GAMES
+       ========================================================================= */
+    const DEFAULT_STATE = {
+      // Shared settings
+      soundEnabled: true,
+      shakeEnabled: true,
+      // Game 1: Socket Simulator
+      coins: 50,
+      theme: 'realism',
+      socketTier: 0,
+      coolingLevel: 1,
+      autoGenLevel: 0,
+      unlockedItems: ['charger', 'lamp'],
+      selectedItemId: 'charger',
+      elecLevel: 1,
+      arcadeBest: 0,
+      // Game 2: Night Lighthouse
+      lhAmber: 30,
+      lhShipsGuided: 0,
+      lhLensLevel: 0,
+      lhFurnaceLevel: 0,
+      lhTowerStyle: 'classic',
+      lhUnlockedTowers: ['classic'],
+      lhWeather: 'starry',
+      lhUnlockedWeathers: ['starry'],
+      lhPostcards: []
+    };
+
+    let state = { ...DEFAULT_STATE };
+    try {
+      const saved = JSON.parse(localStorage.getItem('dual_sim_save_v2'));
+      if (saved) state = { ...DEFAULT_STATE, ...saved };
+    } catch (e) {}
+
+    function saveState() {
+      try {
+        localStorage.setItem('dual_sim_save_v2', JSON.stringify(state));
+      } catch (e) {}
+    }
+
+    function triggerHaptic(pattern = [25], targetScreenId = 'screen-socket') {
+      if (!state.shakeEnabled) return;
+      if (navigator.vibrate) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+      const el = document.getElementById(targetScreenId);
+      if (el) {
+        el.classList.remove('shake');
+        void el.offsetWidth;
+        el.classList.add('shake');
+      }
+    }
+
+    /* =========================================================================
+       4. SCREEN NAVIGATION (GAME HUB MENU <-> SOCKET <-> LIGHTHOUSE)
+       ========================================================================= */
+    let currentScreen = 'menu';
+
+    function switchScreen(screenName) {
+      sound.init();
+      sound.playClick(580, 0.05);
+      currentScreen = screenName;
+      sound.activeScreen = screenName;
+      sound.updateAmbience();
+
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(`screen-${screenName}`).classList.add('active');
+
+      if (screenName === 'socket') {
+        document.body.classList.add('in-socket-game');
+        applyVisualTheme(state.theme);
+        renderSandboxUI();
+        renderElectricianUI();
+      } else {
+        document.body.classList.remove('in-socket-game');
+      }
+
+      if (screenName === 'lighthouse') {
+        resizeLighthouseCanvas();
+        renderLighthouseHUD();
+      }
+
+      if (screenName === 'menu') {
+        updateHubStats();
+      }
+    }
+
+    function updateHubStats() {
+      document.getElementById('hubCoinsVal').textContent = Math.floor(state.coins);
+      document.getElementById('hubAmberVal').textContent = Math.floor(state.lhAmber);
+      document.getElementById('hubCardsVal').textContent = `${state.lhPostcards.length}/${LIGHTHOUSE_POSTCARDS.length}`;
+      document.getElementById('hubSocketStat').textContent = `Розетка: Ур. ${state.socketTier + 1} • Рекорд: ${state.arcadeBest}`;
+      document.getElementById('hubLighthouseStat').textContent = `Кораблей проведено: ${state.lhShipsGuided}`;
+    }
+
+    document.getElementById('launchSocketBtn').addEventListener('click', () => switchScreen('socket'));
+    document.getElementById('launchLighthouseBtn').addEventListener('click', () => switchScreen('lighthouse'));
+    document.querySelectorAll('[data-go-menu]').forEach(btn => {
+      btn.addEventListener('click', () => switchScreen('menu'));
+    });
+
+    /* =========================================================================
+       5. GAME 1: SOCKET SIMULATOR (ALL 3 MODES)
        ========================================================================= */
     const SOCKET_TIERS = [
       { name: 'Советская 6А (1985)', maxWatts: 1320, grounded: false, cost: 0 },
@@ -1754,46 +2055,6 @@
       { id: 'tesla_coil', name: 'Катушка Теслы', icon: '🔮', watts: 12000, income: 550, heat: 12.0, cost: 3200, forbidden: false }
     ];
 
-    const DEFAULT_STATE = {
-      coins: 50,
-      theme: 'realism',
-      soundEnabled: true,
-      shakeEnabled: true,
-      socketTier: 0,
-      coolingLevel: 1,
-      autoGenLevel: 0,
-      unlockedItems: ['charger', 'lamp'],
-      selectedItemId: 'charger',
-      elecLevel: 1,
-      arcadeBest: 0
-    };
-
-    let state = { ...DEFAULT_STATE };
-    try {
-      const saved = JSON.parse(localStorage.getItem('socket_sim_save_v1'));
-      if (saved) state = { ...DEFAULT_STATE, ...saved };
-    } catch (e) {}
-
-    function saveState() {
-      try {
-        localStorage.setItem('socket_sim_save_v1', JSON.stringify(state));
-      } catch (e) {}
-    }
-
-    function triggerHaptic(pattern = [25]) {
-      if (!state.shakeEnabled) return;
-      if (navigator.vibrate) {
-        try { navigator.vibrate(pattern); } catch (e) {}
-      }
-      const shell = document.getElementById('appShell');
-      shell.classList.remove('shake');
-      void shell.offsetWidth;
-      shell.classList.add('shake');
-    }
-
-    /* =========================================================================
-       4. MODE 1: SANDBOX / CLICKER LOGIC
-       ========================================================================= */
     let isPluggedIn = false;
     let isTripped = false;
     let socketTemp = 24;
@@ -1802,13 +2063,8 @@
     const pluggedVisual = document.getElementById('pluggedVisual');
     const sandboxBreaker = document.getElementById('sandboxBreaker');
 
-    function getSelectedItem() {
-      return SANDBOX_ITEMS.find(i => i.id === state.selectedItemId) || SANDBOX_ITEMS[0];
-    }
-
-    function getCurrentTier() {
-      return SOCKET_TIERS[state.socketTier] || SOCKET_TIERS[0];
-    }
+    function getSelectedItem() { return SANDBOX_ITEMS.find(i => i.id === state.selectedItemId) || SANDBOX_ITEMS[0]; }
+    function getCurrentTier() { return SOCKET_TIERS[state.socketTier] || SOCKET_TIERS[0]; }
 
     function renderItemDock() {
       const dock = document.getElementById('itemDock');
@@ -1816,20 +2072,12 @@
       SANDBOX_ITEMS.forEach(item => {
         const unlocked = state.unlockedItems.includes(item.id);
         const card = document.createElement('div');
-        card.className = 'item-card' +
-          (state.selectedItemId === item.id ? ' selected' : '') +
-          (!unlocked ? ' locked' : '') +
-          (item.forbidden ? ' danger-item' : '');
-
+        card.className = 'item-card' + (state.selectedItemId === item.id ? ' selected' : '') + (!unlocked ? ' locked' : '') + (item.forbidden ? ' danger-item' : '');
         card.innerHTML = `
           <div class="item-emoji">${item.icon}</div>
           <div class="item-title">${item.name}</div>
-          ${unlocked
-            ? `<div class="item-watts">${item.forbidden ? 'КЗ! ⚡' : item.watts + ' Вт'}</div>`
-            : `<div class="item-lock-tag">🔒 ${item.cost} В-к</div>`
-          }
+          ${unlocked ? `<div class="item-watts">${item.forbidden ? 'КЗ! ⚡' : item.watts + ' Вт'}</div>` : `<div class="item-lock-tag">🔒 ${item.cost} В-к</div>`}
         `;
-
         card.addEventListener('click', () => {
           sound.init();
           if (!unlocked) {
@@ -1839,7 +2087,7 @@
               state.selectedItemId = item.id;
               sound.playSuccess();
               saveState();
-              renderAll();
+              renderSandboxUI();
             } else {
               sound.playClick(200, 0.08);
               const rect = card.getBoundingClientRect();
@@ -1847,16 +2095,12 @@
             }
             return;
           }
-
-          if (isPluggedIn && state.selectedItemId !== item.id) {
-            unplugItem(false);
-          }
+          if (isPluggedIn && state.selectedItemId !== item.id) unplugItem(false);
           state.selectedItemId = item.id;
           sound.playClick(520, 0.04);
           saveState();
           renderSandboxUI();
         });
-
         dock.appendChild(card);
       });
     }
@@ -1869,17 +2113,14 @@
         triggerHaptic([30]);
         return;
       }
-
       const item = getSelectedItem();
       const tier = getCurrentTier();
       const sRect = mainSocket.getBoundingClientRect();
       const cx = sRect.left + sRect.width / 2;
       const cy = sRect.top + sRect.height / 2;
-
       isPluggedIn = true;
       sound.playPlugIn();
 
-      // Check forbidden items or instant massive overload
       if (item.forbidden || item.watts > tier.maxWatts * 1.45) {
         pluggedVisual.classList.add('inserted');
         sound.playExplosion();
@@ -1888,7 +2129,6 @@
         state.coins += item.income;
         spawnFloatingText(cx, cy - 60, `КЗ! +${item.income} В-к 💥`, '#ffbe0b');
         socketTemp = Math.min(120, socketTemp + 38);
-
         setTimeout(() => {
           tripBreaker('Короткое замыкание / перегрузка!');
           isPluggedIn = false;
@@ -1899,7 +2139,6 @@
         renderTopStats();
         return;
       }
-
       spawnSparks(cx, cy, 8, '#38bdf8');
       renderSandboxUI();
     }
@@ -1937,11 +2176,9 @@
       const sRect = mainSocket.getBoundingClientRect();
       const cx = sRect.left + sRect.width / 2;
       const cy = sRect.top + sRect.height / 2;
-
       if (!isPluggedIn) {
         plugItem();
       } else {
-        // Tapping while plugged in boosts energy generation!
         const item = getSelectedItem();
         const bonus = Math.max(1, Math.round(item.income * 0.4));
         state.coins += bonus;
@@ -1953,7 +2190,6 @@
       }
     });
 
-    // Double-tap or pull button via pluggedVisual click pulls out the plug cleanly
     pluggedVisual.addEventListener('click', (e) => {
       e.stopPropagation();
       sound.init();
@@ -1963,32 +2199,23 @@
     function renderSandboxUI() {
       const item = getSelectedItem();
       const tier = getCurrentTier();
-
       document.getElementById('socketTierName').textContent = tier.name;
       document.getElementById('socketTierLimit').textContent = `Макс: ${tier.maxWatts} Вт • 220В`;
       document.getElementById('selectedItemTag').textContent = `Выбрано: ${item.name}`;
-
-      const well = document.getElementById('socketWell');
-      well.classList.toggle('grounded', tier.grounded);
-
+      document.getElementById('socketWell').classList.toggle('grounded', tier.grounded);
       sandboxBreaker.classList.toggle('tripped', isTripped);
       document.getElementById('breakerStatusText').textContent = isTripped ? 'ВЫБИЛО!' : 'АВТ ВКЛ';
-
       pluggedVisual.classList.toggle('inserted', isPluggedIn);
       pluggedVisual.classList.toggle('forbidden-style', item.forbidden);
       document.getElementById('pluggedIcon').textContent = item.icon;
       document.getElementById('pluggedName').textContent = `${item.name} (вынуть)`;
-
       document.getElementById('holeLeft').classList.toggle('live-glow', !isTripped);
       document.getElementById('holeRight').classList.toggle('live-glow', !isTripped);
 
       const activeWatts = (isPluggedIn && !isTripped && !item.forbidden) ? item.watts : 0;
       const activeIncome = (isPluggedIn && !isTripped && !item.forbidden) ? item.income : 0;
-      const totalIncome = activeIncome + state.autoGenLevel * 5;
-
       document.getElementById('wattsDisplay').textContent = `${activeWatts} Вт`;
-      document.getElementById('incomeRateText').textContent = `${totalIncome} В-к/с`;
-
+      document.getElementById('incomeRateText').textContent = `${activeIncome + state.autoGenLevel * 5} В-к/с`;
       renderItemDock();
       renderTopStats();
     }
@@ -1997,29 +2224,20 @@
       document.getElementById('coinsDisplay').textContent = Math.floor(state.coins);
     }
 
-    // Sandbox 100ms simulation tick
     setInterval(() => {
       const item = getSelectedItem();
       const tier = getCurrentTier();
+      if (state.autoGenLevel > 0) state.coins += (state.autoGenLevel * 5) * 0.1;
 
-      // Passive auto-generator
-      if (state.autoGenLevel > 0) {
-        state.coins += (state.autoGenLevel * 5) * 0.1;
-      }
-
-      if (isPluggedIn && !isTripped && !item.forbidden) {
+      if (currentScreen === 'socket' && isPluggedIn && !isTripped && !item.forbidden) {
         state.coins += item.income * 0.1;
         const loadRatio = item.watts / tier.maxWatts;
         sound.updateHum(loadRatio);
-
-        const heatGain = (item.heat * (0.6 + loadRatio * 0.8)) * 0.1;
-        socketTemp = Math.min(125, socketTemp + heatGain);
-
+        socketTemp = Math.min(125, socketTemp + (item.heat * (0.6 + loadRatio * 0.8)) * 0.1);
         if (socketTemp > 85 && Math.random() < 0.35) {
           const sRect = mainSocket.getBoundingClientRect();
           spawnSmoke(sRect.left + sRect.width / 2, sRect.top + 30);
         }
-
         if (socketTemp >= 115) {
           const sRect = mainSocket.getBoundingClientRect();
           spawnSparks(sRect.left + sRect.width / 2, sRect.top + sRect.height / 2, 24, '#ef4444');
@@ -2029,168 +2247,109 @@
         }
       } else {
         sound.updateHum(0);
-        const coolingRate = (2.4 + state.coolingLevel * 1.4) * 0.1;
-        socketTemp = Math.max(24, socketTemp - coolingRate);
+        socketTemp = Math.max(24, socketTemp - (2.4 + state.coolingLevel * 1.4) * 0.1);
       }
 
-      const tempPct = Math.min(100, Math.max(0, ((socketTemp - 24) / 91) * 100));
-      document.getElementById('tempText').textContent = `${Math.round(socketTemp)}°C`;
-      document.getElementById('tempBar').style.width = `${tempPct}%`;
-      document.getElementById('heatOverlay').style.opacity = Math.max(0, (tempPct - 45) / 55);
-
-      renderTopStats();
+      if (currentScreen === 'socket') {
+        const tempPct = Math.min(100, Math.max(0, ((socketTemp - 24) / 91) * 100));
+        document.getElementById('tempText').textContent = `${Math.round(socketTemp)}°C`;
+        document.getElementById('tempBar').style.width = `${tempPct}%`;
+        document.getElementById('heatOverlay').style.opacity = Math.max(0, (tempPct - 45) / 55);
+        renderTopStats();
+      }
     }, 100);
 
-    // Periodic autosave
-    setInterval(saveState, 4000);
-
-    /* =========================================================================
-       5. UPGRADES MODAL LOGIC
-       ========================================================================= */
+    // Socket Upgrades Modal
     function renderUpgradesModal() {
       const list = document.getElementById('upgradeList');
       list.innerHTML = '';
-
-      // 1. Socket Tier Upgrade
       const nextTier = SOCKET_TIERS[state.socketTier + 1];
       const tierCard = document.createElement('div');
       tierCard.className = 'upgrade-item';
       tierCard.innerHTML = `
-        <div>
-          <h4>🔌 Уровень розетки (${state.socketTier + 1}/${SOCKET_TIERS.length})</h4>
-          <p>${nextTier ? `След: ${nextTier.name} (${nextTier.maxWatts} Вт)` : 'Максимальный уровень!'}</p>
-        </div>
-        <button class="upgrade-btn" ${!nextTier ? 'disabled' : ''} id="buyTierBtn">
-          ${nextTier ? `${nextTier.cost} В-к` : 'МАКС'}
-        </button>
+        <div><h4>🔌 Уровень розетки (${state.socketTier + 1}/${SOCKET_TIERS.length})</h4><p>${nextTier ? `След: ${nextTier.name} (${nextTier.maxWatts} Вт)` : 'Максимум!'}</p></div>
+        <button class="upgrade-btn" ${!nextTier ? 'disabled' : ''} id="buyTierBtn">${nextTier ? `${nextTier.cost} В-к` : 'МАКС'}</button>
       `;
       list.appendChild(tierCard);
       if (nextTier) {
         tierCard.querySelector('#buyTierBtn').addEventListener('click', () => {
           if (state.coins >= nextTier.cost) {
-            state.coins -= nextTier.cost;
-            state.socketTier++;
-            sound.playSuccess();
-            saveState();
-            renderSandboxUI();
-            renderUpgradesModal();
-          } else {
-            sound.playClick(200, 0.08);
-          }
+            state.coins -= nextTier.cost; state.socketTier++;
+            sound.playSuccess(); saveState(); renderSandboxUI(); renderUpgradesModal();
+          } else sound.playClick(200, 0.08);
         });
       }
 
-      // 2. Cooling Upgrade
       const coolCost = state.coolingLevel * 140;
       const coolCard = document.createElement('div');
       coolCard.className = 'upgrade-item';
       coolCard.innerHTML = `
-        <div>
-          <h4>❄️ Радиатор охлаждения (Ур. ${state.coolingLevel})</h4>
-          <p>Ускоряет остывание контактов после нагрузки</p>
-        </div>
+        <div><h4>❄️ Охлаждение (Ур. ${state.coolingLevel})</h4><p>Быстрее остужает контакты</p></div>
         <button class="upgrade-btn" id="buyCoolBtn">${coolCost} В-к</button>
       `;
       list.appendChild(coolCard);
       coolCard.querySelector('#buyCoolBtn').addEventListener('click', () => {
         if (state.coins >= coolCost) {
-          state.coins -= coolCost;
-          state.coolingLevel++;
-          sound.playSuccess();
-          saveState();
-          renderUpgradesModal();
-        } else {
-          sound.playClick(200, 0.08);
-        }
+          state.coins -= coolCost; state.coolingLevel++;
+          sound.playSuccess(); saveState(); renderUpgradesModal();
+        } else sound.playClick(200, 0.08);
       });
 
-      // 3. Auto-Generator Upgrade
       const genCost = (state.autoGenLevel + 1) * 180;
       const genCard = document.createElement('div');
       genCard.className = 'upgrade-item';
       genCard.innerHTML = `
-        <div>
-          <h4>🔋 Умный счётчик (Ур. ${state.autoGenLevel})</h4>
-          <p>Пассивный доход: +${state.autoGenLevel * 5} В-к/с</p>
-        </div>
+        <div><h4>🔋 Умный счётчик (Ур. ${state.autoGenLevel})</h4><p>Пассивный доход: +${state.autoGenLevel * 5} В-к/с</p></div>
         <button class="upgrade-btn" id="buyGenBtn">${genCost} В-к</button>
       `;
       list.appendChild(genCard);
       genCard.querySelector('#buyGenBtn').addEventListener('click', () => {
         if (state.coins >= genCost) {
-          state.coins -= genCost;
-          state.autoGenLevel++;
-          sound.playSuccess();
-          renderSandboxUI();
-          renderUpgradesModal();
-        } else {
-          sound.playClick(200, 0.08);
-        }
+          state.coins -= genCost; state.autoGenLevel++;
+          sound.playSuccess(); saveState(); renderSandboxUI(); renderUpgradesModal();
+        } else sound.playClick(200, 0.08);
       });
     }
 
     document.getElementById('openUpgradesBtn').addEventListener('click', () => {
-      sound.init();
-      sound.playClick(550, 0.04);
-      renderUpgradesModal();
-      document.getElementById('upgradesModal').classList.add('open');
+      sound.init(); renderUpgradesModal(); document.getElementById('upgradesModal').classList.add('open');
     });
 
-    /* =========================================================================
-       6. MODE 2: ELECTRICIAN SIMULATOR LOGIC
-       ========================================================================= */
+    // Electrician Mode
     const ELEC_CONTRACTS = [
       { desc: 'Подключить розетку в спальне для ночника (100 Вт). Зачистите 3 жилы, соедините L, N, PE и поставьте автомат 6А или 16А.', requiredAmp: [6, 16], reward: 120 },
-      { desc: 'Кухонная линия под электрочайник и тостер (3100 Вт, ~14А). Выберите подходящий автомат (16А) и правильно подключите жилы!', requiredAmp: [16], reward: 200 },
+      { desc: 'Кухонная линия под электрочайник и тостер (3100 Вт, ~14А). Выберите автомат 16А и правильно подключите жилы!', requiredAmp: [16], reward: 200 },
       { desc: 'Силовая линия для проточного водонагревателя (5000 Вт, ~22.7А). Поставьте автомат 25А и не перепутайте фазу с землёй!', requiredAmp: [25], reward: 320 },
-      { desc: 'Мастерская: подключение сварочного поста (7500 Вт, ~34А). Требуется мощный автомат 40А и надёжное заземление PE.', requiredAmp: [40], reward: 480 }
+      { desc: 'Мастерская: подключение сварочного поста (7500 Вт, ~34А). Требуется автомат 40А и надёжное заземление PE.', requiredAmp: [40], reward: 480 }
     ];
 
-    let elecState = {
-      stripped: { L: false, N: false, PE: false },
-      selectedWire: null,
-      connections: { L: null, N: null, PE: null }, // terminal -> wire
-      selectedAmp: 16
-    };
-
-    function getCurrentContract() {
-      const idx = (state.elecLevel - 1) % ELEC_CONTRACTS.length;
-      return ELEC_CONTRACTS[idx];
-    }
-
+    let elecState = { stripped: { L: false, N: false, PE: false }, selectedWire: null, connections: { L: null, N: null, PE: null }, selectedAmp: 16 };
+    function getCurrentContract() { return ELEC_CONTRACTS[(state.elecLevel - 1) % ELEC_CONTRACTS.length]; }
     function resetElectricianBoard() {
-      elecState = {
-        stripped: { L: false, N: false, PE: false },
-        selectedWire: null,
-        connections: { L: null, N: null, PE: null },
-        selectedAmp: 16
-      };
+      elecState = { stripped: { L: false, N: false, PE: false }, selectedWire: null, connections: { L: null, N: null, PE: null }, selectedAmp: 16 };
       document.getElementById('elecFeedback').textContent = '';
       renderElectricianUI();
     }
 
     function drawWiresSVG() {
       const svg = document.getElementById('wiringSvg');
-      const boardRect = document.getElementById('wiringBoard').getBoundingClientRect();
+      const board = document.getElementById('wiringBoard');
+      if (!svg || !board) return;
+      const boardRect = board.getBoundingClientRect();
+      if (boardRect.width === 0) return;
       svg.innerHTML = '';
-
       const wireColors = { L: '#ef4444', N: '#3b82f6', PE: '#22c55e' };
-
       ['L', 'N', 'PE'].forEach(term => {
         const wire = elecState.connections[term];
         if (!wire) return;
         const wEl = document.getElementById(`wire-${wire}`);
         const tEl = document.getElementById(`term-${term}`);
-        if (!wEl || !tEl) return;
-
         const wRect = wEl.getBoundingClientRect();
         const tRect = tEl.getBoundingClientRect();
-
         const x1 = wRect.left + wRect.width / 2 - boardRect.left;
         const y1 = wRect.top - boardRect.top + 8;
         const x2 = tRect.left + tRect.width / 2 - boardRect.left;
         const y2 = tRect.bottom - boardRect.top - 8;
-
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const cpY = (y1 + y2) / 2;
         path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${cpY}, ${x2} ${cpY}, ${x2} ${y2}`);
@@ -2207,22 +2366,14 @@
       document.getElementById('elecLevelBadge').textContent = `Заказ #${state.elecLevel}`;
       document.getElementById('elecRewardBadge').textContent = `+${contract.reward} В-к`;
       document.getElementById('elecTaskDesc').textContent = contract.desc;
-
       ['L', 'N', 'PE'].forEach(w => {
         const wEl = document.getElementById(`wire-${w}`);
-        const stEl = document.getElementById(`status-wire-${w}`);
         wEl.classList.toggle('stripped', elecState.stripped[w]);
         wEl.classList.toggle('selected', elecState.selectedWire === w);
-        stEl.textContent = elecState.stripped[w] ? 'Зачищена ✓' : 'В изоляции';
-
-        const tEl = document.getElementById(`term-${w}`);
-        tEl.classList.toggle('connected', Boolean(elecState.connections[w]));
+        document.getElementById(`status-wire-${w}`).textContent = elecState.stripped[w] ? 'Зачищена ✓' : 'В изоляции';
+        document.getElementById(`term-${w}`).classList.toggle('connected', Boolean(elecState.connections[w]));
       });
-
-      document.querySelectorAll('.amp-btn').forEach(btn => {
-        btn.classList.toggle('active', Number(btn.dataset.amp) === elecState.selectedAmp);
-      });
-
+      document.querySelectorAll('.amp-btn').forEach(btn => btn.classList.toggle('active', Number(btn.dataset.amp) === elecState.selectedAmp));
       requestAnimationFrame(drawWiresSVG);
     }
 
@@ -2230,14 +2381,8 @@
       node.addEventListener('click', () => {
         sound.init();
         const w = node.dataset.wire;
-        if (!elecState.stripped[w]) {
-          elecState.stripped[w] = true;
-          elecState.selectedWire = w;
-          sound.playClick(720, 0.05);
-        } else {
-          elecState.selectedWire = (elecState.selectedWire === w) ? null : w;
-          sound.playClick(480, 0.04);
-        }
+        if (!elecState.stripped[w]) { elecState.stripped[w] = true; elecState.selectedWire = w; sound.playClick(720, 0.05); }
+        else { elecState.selectedWire = (elecState.selectedWire === w) ? null : w; sound.playClick(480, 0.04); }
         renderElectricianUI();
       });
     });
@@ -2247,23 +2392,11 @@
         sound.init();
         const term = node.dataset.term;
         if (!elecState.selectedWire) {
-          // If already connected, disconnect on tap
-          if (elecState.connections[term]) {
-            elecState.connections[term] = null;
-            sound.playPlugOut();
-            renderElectricianUI();
-          }
+          if (elecState.connections[term]) { elecState.connections[term] = null; sound.playPlugOut(); renderElectricianUI(); }
           return;
         }
         const wire = elecState.selectedWire;
-        if (!elecState.stripped[wire]) {
-          document.getElementById('elecFeedback').textContent = '⚠️ Сначала зачисти изоляцию с выбранной жилы!';
-          return;
-        }
-        // Remove wire from any previous terminal
-        Object.keys(elecState.connections).forEach(k => {
-          if (elecState.connections[k] === wire) elecState.connections[k] = null;
-        });
+        Object.keys(elecState.connections).forEach(k => { if (elecState.connections[k] === wire) elecState.connections[k] = null; });
         elecState.connections[term] = wire;
         elecState.selectedWire = null;
         sound.playPlugIn();
@@ -2272,71 +2405,38 @@
     });
 
     document.querySelectorAll('.amp-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        sound.init();
-        elecState.selectedAmp = Number(btn.dataset.amp);
-        sound.playClick(600, 0.04);
-        renderElectricianUI();
-      });
+      btn.addEventListener('click', () => { sound.init(); elecState.selectedAmp = Number(btn.dataset.amp); sound.playClick(600, 0.04); renderElectricianUI(); });
     });
 
     document.getElementById('elecTestBtn').addEventListener('click', () => {
       sound.init();
       const { L, N, PE } = elecState.connections;
       const fb = document.getElementById('elecFeedback');
-      const boardRect = document.getElementById('wiringBoard').getBoundingClientRect();
-      const cx = boardRect.left + boardRect.width / 2;
-      const cy = boardRect.top + boardRect.height / 2;
+      const r = document.getElementById('wiringBoard').getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
 
-      if (!L || !N || !PE) {
-        fb.style.color = '#f59e0b';
-        fb.textContent = '⚠️ Подключите все 3 жилы (L, N и PE) к клеммам!';
-        sound.playClick(240, 0.07);
-        return;
-      }
-
+      if (!L || !N || !PE) { fb.style.color = '#f59e0b'; fb.textContent = '⚠️ Подключите все 3 жилы (L, N и PE)!'; sound.playClick(240, 0.07); return; }
       if (PE === 'L' || L === 'PE') {
-        fb.style.color = '#ef4444';
-        fb.textContent = '💥 БАБАХ! Фаза попала на землю (PE) — сработало УЗО и выбило щиток!';
-        sound.playExplosion();
-        spawnSparks(cx, cy, 32, '#ef4444');
-        triggerHaptic([80, 40, 100]);
-        return;
+        fb.style.color = '#ef4444'; fb.textContent = '💥 БАБАХ! Фаза попала на землю (PE) — сработало УЗО!';
+        sound.playExplosion(); spawnSparks(cx, cy, 32, '#ef4444'); triggerHaptic([80, 40, 100]); return;
       }
-
       if (L !== 'L' || N !== 'N' || PE !== 'PE') {
-        fb.style.color = '#ef4444';
-        fb.textContent = '⚡ Ошибка полярности! Проверь соответствие L -> L, N -> N, PE -> PE.';
-        sound.playSpark(1.2);
-        spawnSparks(cx, cy, 16, '#ffbe0b');
-        return;
+        fb.style.color = '#ef4444'; fb.textContent = '⚡ Ошибка полярности! Проверь L -> L, N -> N, PE -> PE.';
+        sound.playSpark(1.2); spawnSparks(cx, cy, 16, '#ffbe0b'); return;
       }
-
       const contract = getCurrentContract();
       if (!contract.requiredAmp.includes(elecState.selectedAmp)) {
         fb.style.color = '#f59e0b';
-        fb.textContent = elecState.selectedAmp < contract.requiredAmp[0]
-          ? `⚠️ Автомат ${elecState.selectedAmp}А слишком слабый — выбило под нагрузкой!`
-          : `⚠️ Автомат ${elecState.selectedAmp}А слишком мощный для этого кабеля — риск перегрева!`;
-        sound.playClick(210, 0.1);
-        return;
+        fb.textContent = elecState.selectedAmp < contract.requiredAmp[0] ? `⚠️ Автомат ${elecState.selectedAmp}А выбило под нагрузкой!` : `⚠️ Автомат ${elecState.selectedAmp}А слишком мощный для кабеля!`;
+        sound.playClick(210, 0.1); return;
       }
-
-      // Success!
-      fb.style.color = '#22c55e';
-      fb.textContent = `✅ Идеальный монтаж! 220В в норме (+${contract.reward} В-к)`;
-      sound.playSuccess();
-      spawnSparks(cx, cy, 14, '#22c55e');
-      state.coins += contract.reward;
-      state.elecLevel++;
-      saveState();
-      renderTopStats();
+      fb.style.color = '#22c55e'; fb.textContent = `✅ Идеальный монтаж! (+${contract.reward} В-к)`;
+      sound.playSuccess(); spawnSparks(cx, cy, 14, '#22c55e');
+      state.coins += contract.reward; state.elecLevel++; saveState(); renderTopStats();
       setTimeout(resetElectricianBoard, 1500);
     });
 
-    /* =========================================================================
-       7. MODE 3: REACTION ARCADE ("OVERLOAD") LOGIC
-       ========================================================================= */
+    // Arcade Mode
     const ARCADE_DEVICES = [
       { name: 'Чайник', icon: '🫖', watts: 2200, heatRate: 14 },
       { name: 'Фен', icon: '💨', watts: 1800, heatRate: 12 },
@@ -2345,48 +2445,33 @@
       { name: 'СВЧ-печь', icon: '🍲', watts: 1600, heatRate: 11 },
       { name: 'Утюг', icon: '👕', watts: 2400, heatRate: 15 }
     ];
-
-    let arcadeRunning = false;
-    let arcadeScore = 0;
-    let arcadeLives = 3;
-    let arcadeVoltage = 220;
-    let coolCooldown = 0;
-    let arcadeSlots = [null, null, null, null];
-    let arcadeLoopId = null;
-    let arcadeSpawnTimer = 0;
+    let arcadeRunning = false, arcadeScore = 0, arcadeLives = 3, arcadeVoltage = 220, coolCooldown = 0;
+    let arcadeSlots = [null, null, null, null], arcadeLoopId = null, arcadeSpawnTimer = 0;
 
     function renderArcadeStrip() {
       const strip = document.getElementById('powerStrip');
       strip.innerHTML = '';
       arcadeSlots.forEach((slot, idx) => {
         const el = document.createElement('div');
-        el.className = 'strip-slot' +
-          (slot ? ' occupied' : '') +
-          (slot && slot.heat > 72 ? ' overheating' : '');
-
+        el.className = 'strip-slot' + (slot ? ' occupied' : '') + (slot && slot.heat > 72 ? ' overheating' : '');
         if (!slot) {
-          el.innerHTML = `
-            <div class="slot-empty-holes"><span></span><span></span></div>
-            <div style="font-size:10px;color:var(--text-muted);margin-top:8px;">Гнездо #${idx + 1}</div>
-          `;
+          el.innerHTML = `<div class="slot-empty-holes"><span></span><span></span></div><div style="font-size:10px;color:var(--text-muted);margin-top:8px;">Гнездо #${idx + 1}</div>`;
         } else {
           el.innerHTML = `
-            <div style="font-size:28px;">${slot.icon}</div>
+            <div style="font-size:26px;">${slot.icon}</div>
             <div style="font-size:11px;font-weight:800;margin-top:2px;">${slot.name}</div>
             <div style="font-size:10px;font-family:var(--font-mono);color:var(--accent);">${slot.watts} Вт</div>
             <div class="slot-heat-bar"><div class="slot-heat-fill" style="width:${Math.min(100, slot.heat)}%"></div></div>
           `;
           el.addEventListener('click', () => {
             if (!arcadeRunning || !arcadeSlots[idx]) return;
-            sound.init();
-            sound.playPlugOut();
+            sound.init(); sound.playPlugOut();
             const r = el.getBoundingClientRect();
             const pts = Math.round(15 + arcadeSlots[idx].heat * 0.4);
             arcadeScore += pts;
             spawnFloatingText(r.left + r.width / 2, r.top + 20, `Выдернул! +${pts}`, '#22c55e');
             arcadeSlots[idx] = null;
-            updateArcadeHUD();
-            renderArcadeStrip();
+            updateArcadeHUD(); renderArcadeStrip();
           });
         }
         strip.appendChild(el);
@@ -2403,20 +2488,11 @@
     }
 
     function startArcade() {
-      sound.init();
-      arcadeRunning = true;
-      arcadeScore = 0;
-      arcadeLives = 3;
-      arcadeVoltage = 220;
-      coolCooldown = 0;
-      arcadeSlots = [null, null, null, null];
-      arcadeSpawnTimer = 0;
-
+      sound.init(); arcadeRunning = true; arcadeScore = 0; arcadeLives = 3; arcadeVoltage = 220; coolCooldown = 0;
+      arcadeSlots = [null, null, null, null]; arcadeSpawnTimer = 0;
       document.getElementById('arcadeStartBtn').textContent = '🔄 ЗАНОВО';
       document.getElementById('arcadeCoolBtn').disabled = false;
-      updateArcadeHUD();
-      renderArcadeStrip();
-
+      updateArcadeHUD(); renderArcadeStrip();
       if (arcadeLoopId) clearInterval(arcadeLoopId);
       arcadeLoopId = setInterval(tickArcade, 200);
     }
@@ -2425,78 +2501,48 @@
       arcadeRunning = false;
       if (arcadeLoopId) clearInterval(arcadeLoopId);
       sound.playExplosion();
-      if (arcadeScore > state.arcadeBest) {
-        state.arcadeBest = arcadeScore;
-      }
+      if (arcadeScore > state.arcadeBest) state.arcadeBest = arcadeScore;
       const rewardCoins = Math.max(10, Math.round(arcadeScore * 0.35));
-      state.coins += rewardCoins;
-      saveState();
-      renderTopStats();
-      updateArcadeHUD();
-
-      const stripRect = document.getElementById('powerStrip').getBoundingClientRect();
-      spawnFloatingText(stripRect.left + stripRect.width / 2, stripRect.top + 90, `ФИНИШ! +${rewardCoins} В-к`, '#ffbe0b');
+      state.coins += rewardCoins; saveState(); renderTopStats(); updateArcadeHUD();
+      const r = document.getElementById('powerStrip').getBoundingClientRect();
+      spawnFloatingText(r.left + r.width / 2, r.top + 90, `ФИНИШ! +${rewardCoins} В-к`, '#ffbe0b');
       document.getElementById('arcadeStartBtn').textContent = '▶ ИГРАТЬ ЕЩЁ';
       document.getElementById('arcadeCoolBtn').disabled = true;
     }
 
     function tickArcade() {
       if (!arcadeRunning) return;
-
-      // Random voltage surges
-      if (Math.random() < 0.08) {
-        arcadeVoltage = Math.random() < 0.45 ? 262 : 220;
-      }
-
-      // Spawn new appliance in empty slot
+      if (Math.random() < 0.08) arcadeVoltage = Math.random() < 0.45 ? 262 : 220;
       arcadeSpawnTimer += 0.2;
-      const spawnInterval = Math.max(0.85, 1.9 - arcadeScore / 600);
-      if (arcadeSpawnTimer >= spawnInterval) {
+      if (arcadeSpawnTimer >= Math.max(0.85, 1.9 - arcadeScore / 600)) {
         arcadeSpawnTimer = 0;
-        const emptyIndices = arcadeSlots.map((s, i) => s === null ? i : -1).filter(i => i !== -1);
-        if (emptyIndices.length > 0) {
-          const slotIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
-          const dev = ARCADE_DEVICES[Math.floor(Math.random() * ARCADE_DEVICES.length)];
-          arcadeSlots[slotIdx] = { ...dev, heat: 8 };
+        const empty = arcadeSlots.map((s, i) => s === null ? i : -1).filter(i => i !== -1);
+        if (empty.length > 0) {
+          const idx = empty[Math.floor(Math.random() * empty.length)];
+          arcadeSlots[idx] = { ...ARCADE_DEVICES[Math.floor(Math.random() * ARCADE_DEVICES.length)], heat: 8 };
           sound.playPlugIn();
         }
       }
-
-      // Heat up occupied slots
       const surgeMult = arcadeVoltage > 240 ? 1.65 : 1.0;
       for (let i = 0; i < 4; i++) {
         const s = arcadeSlots[i];
         if (!s) continue;
         s.heat += (s.heatRate * surgeMult) * 0.2;
         if (s.heat >= 100) {
-          // Slot exploded!
-          const stripEl = document.getElementById('powerStrip').children[i];
-          if (stripEl) {
-            const r = stripEl.getBoundingClientRect();
-            spawnSparks(r.left + r.width / 2, r.top + r.height / 2, 24, '#ef4444');
-          }
-          sound.playExplosion();
-          triggerHaptic([60, 30, 80]);
-          arcadeSlots[i] = null;
-          arcadeLives--;
-          if (arcadeLives <= 0) {
-            renderArcadeStrip();
-            stopArcade();
-            return;
-          }
+          const el = document.getElementById('powerStrip').children[i];
+          if (el) { const r = el.getBoundingClientRect(); spawnSparks(r.left + r.width / 2, r.top + r.height / 2, 24, '#ef4444'); }
+          sound.playExplosion(); triggerHaptic([60, 30, 80]);
+          arcadeSlots[i] = null; arcadeLives--;
+          if (arcadeLives <= 0) { renderArcadeStrip(); stopArcade(); return; }
         }
       }
-
-      // Cooldown timer for Freeze button
       if (coolCooldown > 0) {
         coolCooldown = Math.max(0, coolCooldown - 0.2);
         const btn = document.getElementById('arcadeCoolBtn');
         btn.disabled = coolCooldown > 0;
         btn.textContent = coolCooldown > 0 ? `❄️ ОХЛАЖДЕНИЕ (${coolCooldown.toFixed(1)}с)` : '❄️ ОХЛАДИТЬ (ГОТОВО)';
       }
-
-      updateArcadeHUD();
-      renderArcadeStrip();
+      updateArcadeHUD(); renderArcadeStrip();
     }
 
     document.getElementById('arcadeStartBtn').addEventListener('click', startArcade);
@@ -2504,23 +2550,699 @@
       if (!arcadeRunning || coolCooldown > 0) return;
       sound.playSpark(0.7);
       arcadeSlots.forEach(s => { if (s) s.heat = Math.max(0, s.heat - 45); });
-      coolCooldown = 6.0;
-      renderArcadeStrip();
+      coolCooldown = 6.0; renderArcadeStrip();
     });
 
     /* =========================================================================
-       8. NAVIGATION, VISUAL THEME SETTINGS & AUDIO TOGGLES
+       6. GAME 2: NIGHT LIGHTHOUSE (MEDITATIVE MICRO-SIMULATOR)
+       ========================================================================= */
+    const LH_LENSES = [
+      { name: 'Обычное стекло', saltResist: 1.0, beamSpread: 0.16, cost: 0 },
+      { name: 'Линза Френеля', saltResist: 1.55, beamSpread: 0.22, cost: 45 },
+      { name: 'Хрустальная призма', saltResist: 2.3, beamSpread: 0.29, cost: 110 }
+    ];
+
+    const LH_FURNACES = [
+      { name: 'Чугунная печь', burnResist: 1.0, cost: 0 },
+      { name: 'Брикетный котёл', burnResist: 1.5, cost: 40 },
+      { name: 'Янтарный горн', burnResist: 2.2, cost: 100 }
+    ];
+
+    const LH_TOWERS = [
+      { id: 'classic', name: 'Классический красно-белый', stripe1: '#f8fafc', stripe2: '#dc2626', cost: 0 },
+      { id: 'stone', name: 'Северный гранит', stripe1: '#94a3b8', stripe2: '#475569', cost: 35 },
+      { id: 'cozy_wood', name: 'Уютный кедр и медь', stripe1: '#d97706', stripe2: '#78350f', cost: 65 },
+      { id: 'royal_gold', name: 'Золотая обсерватория', stripe1: '#fef08a', stripe2: '#1e3a8a', cost: 130 }
+    ];
+
+    const LH_WEATHERS = [
+      { id: 'starry', name: 'Ясная звёздная ночь', desc: 'Полная луна и спокойный прибой', skyTop: '#040914', skyBot: '#0f2342', fogRate: 0.65, bonusMult: 1.0, cost: 0 },
+      { id: 'sunset', name: 'Янтарные сумерки', desc: 'Тёплый закатный горизонт', skyTop: '#1e1b4b', skyBot: '#7c2d12', fogRate: 0.45, bonusMult: 1.1, cost: 30 },
+      { id: 'aurora', name: 'Северное сияние', desc: 'Изумрудные ленты в ночном небе', skyTop: '#020617', skyBot: '#064e3b', fogRate: 0.75, bonusMult: 1.35, cost: 60 },
+      { id: 'rain', name: 'Уютный морской дождь', desc: 'Шум капель, густой туман и x1.6 янтаря', skyTop: '#090d16', skyBot: '#1e293b', fogRate: 1.25, bonusMult: 1.6, cost: 95 }
+    ];
+
+    const LIGHTHOUSE_POSTCARDS = [
+      { id: 'pc1', icon: '⛵', title: 'Шхуна «Полярная звезда»', text: '«Ваш тёплый луч прорезал мглу ровно вовремя. Капитан и команда пьют горячий чай за ваше здоровье!»', meta: 'Маршрут: Северный пролив' },
+      { id: 'pc2', icon: '🚢', title: 'Почтовый пароход «Арктур»', text: '«Гудок вашего маяка слышен за пять миль. Доставили мешки с письмами точно по расписанию!»', meta: 'Маршрут: Бухта Тихая' },
+      { id: 'pc3', icon: '🛶', title: 'Рыбацкий баркас «Удача»', text: '«Возвращались с богатым уловом в густом тумане. Спасибо, что протёрли линзу — светило как солнце!»', meta: 'Маршрут: Мыс Скалистый' },
+      { id: 'pc4', icon: '🧊', title: 'Ледокол «Борей»', text: '«Даже среди льдов ваш маяк греет душу. Оставляем вам ящик отборного балтийского янтаря.»', meta: 'Маршрут: Ледяная гряда' },
+      { id: 'pc5', icon: '🧭', title: 'Бригантина «Алые паруса»', text: '«Идём под звёздами на юг. Ваш ритмичный свет — лучший ориентир во всём океане.»', meta: 'Маршрут: Южный архипелаг' },
+      { id: 'pc6', icon: '🐋', title: 'Исследовательский бот «Наутилус»', text: '«Наблюдали китов прямо у вашей скалы. Ваш туманный горн им явно понравился!»', meta: 'Маршрут: Китовый залив' },
+      { id: 'pc7', icon: '🕯️', title: 'Каравелла «Тихий ветер»', text: '«Ни единого рифа не задели благодаря вашему чуткому дежурству. До новых встреч, смотритель!»', meta: 'Маршрут: Остров Туманов' },
+      { id: 'pc8', icon: '✨', title: 'Фрегат «Серебряный сон»', text: '«Говорят, этот маяк горит ярче всех звёзд. Теперь мы убедились в этом сами.»', meta: 'Маршрут: Звёздная гавань' }
+    ];
+
+    // Live simulation variables for Night Lighthouse
+    let lhCoal = 85;          // 0..100
+    let lhCleanliness = 100;  // 0..100 (100 = crystal clean, 0 = covered in sea salt)
+    let lhFog = 12;           // 0..100
+    let lhBeamAngle = 0;
+    let lhWaveTime = 0;
+    let lhHornWave = 0;       // 0..1 expanding sound ring
+
+    // Ship state (cozy, non-punishing)
+    let lhShip = null;        // { name, icon, x, dir, progress, inFog, hornAck, safeDone }
+    let lhNextShipTimer = 2.5;
+    let lhFogCycleTimer = 14;
+
+    const SHIP_ROSTER = [
+      { name: 'Шхуна «Полярная звезда»', icon: '⛵' },
+      { name: 'Пароход «Арктур»', icon: '🚢' },
+      { name: 'Баркас «Удача»', icon: '🛥️' },
+      { name: 'Ледокол «Борей»', icon: '⛴️' },
+      { name: 'Бригантина «Алые паруса»', icon: '⛵' }
+    ];
+
+    // Salt overlay canvas for swipe wiping
+    const saltCanvas = document.getElementById('saltOverlayCanvas');
+    const saltCtx = saltCanvas.getContext('2d');
+    let saltCrystals = [];
+
+    function initSaltCrystals() {
+      saltCrystals = [];
+      for (let i = 0; i < 65; i++) {
+        saltCrystals.push({
+          x: 14 + Math.random() * 168,
+          y: 12 + Math.random() * 116,
+          r: 2.5 + Math.random() * 4.5,
+          threshold: (i / 65) * 95 // appears as cleanliness drops below 100 - threshold
+        });
+      }
+    }
+    initSaltCrystals();
+
+    function renderSaltOverlay() {
+      saltCtx.clearRect(0, 0, saltCanvas.width, saltCanvas.height);
+      const dirtyPct = 100 - lhCleanliness;
+      if (dirtyPct <= 2) return;
+
+      // Subtle frosted salt haze
+      saltCtx.fillStyle = `rgba(226, 238, 248, ${Math.min(0.42, (dirtyPct / 100) * 0.45)})`;
+      saltCtx.fillRect(0, 0, saltCanvas.width, saltCanvas.height);
+
+      // Individual salt grains
+      saltCrystals.forEach(c => {
+        if (dirtyPct >= c.threshold) {
+          saltCtx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+          saltCtx.beginPath();
+          saltCtx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+          saltCtx.fill();
+        }
+      });
+    }
+
+    // Swipe / Rub gesture on Lens Wipe Zone
+    const lensZone = document.getElementById('lensWipeZone');
+    let isWiping = false;
+    let lastWipeSound = 0;
+
+    function handleLensSwipe(clientX, clientY) {
+      if (lhCleanliness >= 100) return;
+      lhCleanliness = Math.min(100, lhCleanliness + 3.4);
+      renderSaltOverlay();
+      renderLighthouseHUD();
+
+      const now = Date.now();
+      if (now - lastWipeSound > 130) {
+        sound.playGlassWipe();
+        lastWipeSound = now;
+      }
+
+      if (Math.random() < 0.35) {
+        spawnFloatingText(clientX, clientY - 12, '✨', '#7dd3fc');
+      }
+    }
+
+    lensZone.addEventListener('pointerdown', (e) => {
+      sound.init();
+      isWiping = true;
+      handleLensSwipe(e.clientX, e.clientY);
+    });
+    lensZone.addEventListener('pointermove', (e) => {
+      if (!isWiping) return;
+      handleLensSwipe(e.clientX, e.clientY);
+    });
+    window.addEventListener('pointerup', () => { isWiping = false; });
+
+    // Coal & Foghorn Actions
+    document.getElementById('lhAddCoalBtn').addEventListener('click', () => {
+      sound.init();
+      sound.playCoalCrackle();
+      lhCoal = Math.min(100, lhCoal + 28);
+      const r = document.getElementById('lhAddCoalBtn').getBoundingClientRect();
+      spawnFloatingText(r.left + r.width / 2, r.top - 8, '+28% Жар 🔥', '#fb923c');
+      renderLighthouseHUD();
+    });
+
+    document.getElementById('lhHornBtn').addEventListener('click', () => {
+      sound.init();
+      sound.playFoghorn(false);
+      lhHornWave = 0.01;
+      // Gently disperses a bit of fog and guides any ship in fog
+      lhFog = Math.max(5, lhFog - 16);
+
+      if (lhShip && !lhShip.hornAck) {
+        lhShip.hornAck = true;
+        setTimeout(() => sound.playFoghorn(true), 950);
+        document.getElementById('lhShipBanner').textContent = `📯 ${lhShip.name} услышал горн и держит верный курс!`;
+        document.getElementById('lhShipBanner').classList.remove('fog-alert');
+      }
+      renderLighthouseHUD();
+    });
+
+    function showPostcardToast(card) {
+      document.getElementById('toastCardIcon').textContent = card.icon;
+      document.getElementById('toastCardTitle').textContent = card.title;
+      const toast = document.getElementById('postcardToast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3800);
+    }
+
+    function rewardSafeShipPassage(ship) {
+      const weatherObj = LH_WEATHERS.find(w => w.id === state.lhWeather) || LH_WEATHERS[0];
+      const amberEarned = Math.round((14 + Math.random() * 6) * weatherObj.bonusMult);
+      state.lhAmber += amberEarned;
+      state.lhShipsGuided += 1;
+      sound.playSuccess();
+
+      const banner = document.getElementById('lhShipBanner');
+      banner.textContent = `✨ ${ship.name} благополучно прошёл мимо! (+${amberEarned} 🔶)`;
+      banner.classList.remove('fog-alert');
+
+      // Unlock next postcard if available
+      const lockedCards = LIGHTHOUSE_POSTCARDS.filter(c => !state.lhPostcards.includes(c.id));
+      if (lockedCards.length > 0) {
+        const won = lockedCards[0];
+        state.lhPostcards.push(won.id);
+        showPostcardToast(won);
+      }
+
+      saveState();
+      renderLighthouseHUD();
+    }
+
+    function renderLighthouseHUD() {
+      document.getElementById('lhAmberDisplay').textContent = Math.floor(state.lhAmber);
+      document.getElementById('lhShipsDisplay').textContent = state.lhShipsGuided;
+
+      const coalInt = Math.round(lhCoal);
+      const cleanInt = Math.round(lhCleanliness);
+      const fogInt = Math.round(lhFog);
+
+      document.getElementById('lhCoalPct').textContent = `${coalInt}%`;
+      document.getElementById('lhCoalBar').style.width = `${coalInt}%`;
+
+      document.getElementById('lhLensPct').textContent = `${cleanInt}%`;
+      document.getElementById('lhLensBar').style.width = `${cleanInt}%`;
+
+      document.getElementById('lhFogPct').textContent = `${fogInt}%`;
+      document.getElementById('lhFogBar').style.width = `${fogInt}%`;
+
+      const badge = document.getElementById('lensCleanBadge');
+      if (cleanInt > 82) badge.textContent = `✨ Линза чистая: ${cleanInt}%`;
+      else badge.textContent = `🧽 Протри свайпами: ${cleanInt}%`;
+
+      const hornBtn = document.getElementById('lhHornBtn');
+      hornBtn.classList.toggle('pulsing', Boolean(lhShip && lhFog > 45 && !lhShip.hornAck));
+    }
+
+    // Lighthouse Simulation Tick (250ms)
+    setInterval(() => {
+      if (currentScreen !== 'lighthouse') return;
+
+      const lensObj = LH_LENSES[state.lhLensLevel] || LH_LENSES[0];
+      const furnaceObj = LH_FURNACES[state.lhFurnaceLevel] || LH_FURNACES[0];
+      const weatherObj = LH_WEATHERS.find(w => w.id === state.lhWeather) || LH_WEATHERS[0];
+
+      // Gentle decay of coal and accumulation of sea salt
+      lhCoal = Math.max(12, lhCoal - (0.55 / furnaceObj.burnResist));
+      lhCleanliness = Math.max(15, lhCleanliness - (0.65 / lensObj.saltResist));
+
+      // Natural fog ebb & flow
+      lhFogCycleTimer -= 0.25;
+      if (lhFogCycleTimer <= 0) {
+        lhFogCycleTimer = 14 + Math.random() * 8;
+        lhFog = Math.min(88, Math.max(10, lhFog + (Math.random() > 0.38 ? 38 : -32) * weatherObj.fogRate));
+      } else {
+        lhFog = Math.max(8, lhFog - 0.25);
+      }
+
+      // Ship lifecycle (cozy: never crashes, turns back gently if light is too dim)
+      if (!lhShip) {
+        lhNextShipTimer -= 0.25;
+        if (lhNextShipTimer <= 0) {
+          const tpl = SHIP_ROSTER[Math.floor(Math.random() * SHIP_ROSTER.length)];
+          const dir = Math.random() > 0.5 ? 1 : -1;
+          lhShip = {
+            name: tpl.name,
+            icon: tpl.icon,
+            progress: 0, // 0 to 1 across horizon
+            dir,
+            hornAck: false,
+            guided: false
+          };
+          const banner = document.getElementById('lhShipBanner');
+          if (lhFog > 45) {
+            banner.textContent = `🌫️ В тумане идёт ${lhShip.name}! Нажми на горн 📯`;
+            banner.classList.add('fog-alert');
+          } else {
+            banner.textContent = `${lhShip.icon} На горизонте появился ${lhShip.name}`;
+            banner.classList.remove('fog-alert');
+          }
+        }
+      } else {
+        const beamPower = (lhCoal / 100) * (lhCleanliness / 100);
+        const fogBlocks = lhFog > 52 && !lhShip.hornAck;
+        const lightTooDim = beamPower < 0.26;
+
+        // Move ship smoothly
+        lhShip.progress += 0.016;
+
+        // Check mid-passage guidance
+        if (lhShip.progress >= 0.52 && !lhShip.guided) {
+          if (!fogBlocks && !lightTooDim) {
+            lhShip.guided = true;
+            rewardSafeShipPassage(lhShip);
+          } else if (lhShip.progress >= 0.65) {
+            // Cozy non-punishing fallback: ship gently turns back to wait for better visibility
+            const reason = fogBlocks ? 'густого тумана (нужен гудок)' : 'тусклого света (нужен уголь и чистая линза)';
+            document.getElementById('lhShipBanner').textContent = `🌊 ${lhShip.name} осторожно отошёл мористее из-за ${reason}.`;
+            document.getElementById('lhShipBanner').classList.remove('fog-alert');
+            lhShip = null;
+            lhNextShipTimer = 3.5;
+          }
+        }
+
+        if (lhShip && lhShip.progress >= 1.0) {
+          lhShip = null;
+          lhNextShipTimer = 3.0;
+          document.getElementById('lhShipBanner').textContent = 'Спокойная вахта. Море мерно дышит...';
+        }
+      }
+
+      renderSaltOverlay();
+      renderLighthouseHUD();
+    }, 250);
+
+    // Lighthouse Main Scenic Canvas Renderer
+    const lhCanvas = document.getElementById('lighthouseCanvas');
+    const lhCtx = lhCanvas.getContext('2d');
+    let stars = [];
+    let raindrops = [];
+
+    function resizeLighthouseCanvas() {
+      lhCanvas.width = window.innerWidth * window.devicePixelRatio;
+      lhCanvas.height = window.innerHeight * window.devicePixelRatio;
+      lhCtx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+      stars = Array.from({ length: 48 }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * (window.innerHeight * 0.55),
+        r: 0.7 + Math.random() * 1.5,
+        phase: Math.random() * Math.PI * 2
+      }));
+      raindrops = Array.from({ length: 55 }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        len: 10 + Math.random() * 12,
+        speed: 7 + Math.random() * 5
+      }));
+    }
+    window.addEventListener('resize', resizeLighthouseCanvas);
+    resizeLighthouseCanvas();
+
+    function renderLighthouseScene() {
+      if (currentScreen === 'lighthouse') {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        lhWaveTime += 0.025;
+        lhBeamAngle += 0.018;
+
+        const weatherObj = LH_WEATHERS.find(item => item.id === state.lhWeather) || LH_WEATHERS[0];
+        const towerObj = LH_TOWERS.find(item => item.id === state.lhTowerStyle) || LH_TOWERS[0];
+        const lensObj = LH_LENSES[state.lhLensLevel] || LH_LENSES[0];
+
+        // 1. Sky Gradient
+        const skyGrad = lhCtx.createLinearGradient(0, 0, 0, h * 0.65);
+        skyGrad.addColorStop(0, weatherObj.skyTop);
+        skyGrad.addColorStop(1, weatherObj.skyBot);
+        lhCtx.fillStyle = skyGrad;
+        lhCtx.fillRect(0, 0, w, h);
+
+        // 2. Stars & Moon / Aurora
+        stars.forEach(s => {
+          const twinkle = 0.4 + 0.6 * Math.sin(lhWaveTime * 1.6 + s.phase);
+          lhCtx.fillStyle = `rgba(248, 250, 252, ${twinkle * 0.85})`;
+          lhCtx.beginPath();
+          lhCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          lhCtx.fill();
+        });
+
+        if (weatherObj.id === 'aurora') {
+          const aurGrad = lhCtx.createLinearGradient(0, h * 0.08, w, h * 0.32);
+          aurGrad.addColorStop(0, 'rgba(16, 185, 129, 0.05)');
+          aurGrad.addColorStop(0.5, 'rgba(52, 211, 153, 0.24)');
+          aurGrad.addColorStop(1, 'rgba(139, 92, 246, 0.14)');
+          lhCtx.fillStyle = aurGrad;
+          lhCtx.beginPath();
+          lhCtx.moveTo(0, h * 0.25);
+          for (let x = 0; x <= w; x += 30) {
+            lhCtx.lineTo(x, h * 0.2 + Math.sin(x * 0.012 + lhWaveTime) * 22);
+          }
+          lhCtx.lineTo(w, h * 0.34);
+          lhCtx.lineTo(0, h * 0.34);
+          lhCtx.closePath();
+          lhCtx.fill();
+        } else {
+          // Soft Moon
+          lhCtx.save();
+          lhCtx.fillStyle = weatherObj.id === 'sunset' ? '#fdba74' : '#fef9c3';
+          lhCtx.shadowBlur = 24;
+          lhCtx.shadowColor = 'rgba(254, 249, 195, 0.45)';
+          lhCtx.beginPath();
+          lhCtx.arc(w * 0.8, h * 0.16, 20, 0, Math.PI * 2);
+          lhCtx.fill();
+          lhCtx.restore();
+        }
+
+        const horizonY = h * 0.58;
+
+        // 3. Ship on Horizon (behind fog/waves)
+        if (lhShip) {
+          const startX = lhShip.dir === 1 ? -40 : w + 40;
+          const endX = lhShip.dir === 1 ? w + 40 : -40;
+          const shipX = startX + (endX - startX) * lhShip.progress;
+          const shipY = horizonY - 6 + Math.sin(lhWaveTime * 2) * 2;
+
+          lhCtx.save();
+          lhCtx.translate(shipX, shipY);
+          if (lhShip.dir === -1) lhCtx.scale(-1, 1);
+          // Hull silhouette
+          lhCtx.fillStyle = '#0f172a';
+          lhCtx.beginPath();
+          lhCtx.moveTo(-24, 0);
+          lhCtx.lineTo(24, 0);
+          lhCtx.lineTo(16, 10);
+          lhCtx.lineTo(-18, 10);
+          lhCtx.closePath();
+          lhCtx.fill();
+          // Sail / Cabin
+          lhCtx.fillStyle = '#334155';
+          lhCtx.beginPath();
+          lhCtx.moveTo(-4, -2);
+          lhCtx.lineTo(-4, -22);
+          lhCtx.lineTo(14, -4);
+          lhCtx.closePath();
+          lhCtx.fill();
+          // Warm ship navigation light
+          lhCtx.fillStyle = lhShip.hornAck ? '#4ade80' : '#fbbf24';
+          lhCtx.shadowBlur = 10;
+          lhCtx.shadowColor = lhShip.hornAck ? '#4ade80' : '#fbbf24';
+          lhCtx.beginPath();
+          lhCtx.arc(16, -2, 3, 0, Math.PI * 2);
+          lhCtx.fill();
+          lhCtx.restore();
+        }
+
+        // 4. Sea Waves
+        const seaGrad = lhCtx.createLinearGradient(0, horizonY, 0, h);
+        seaGrad.addColorStop(0, '#0c2442');
+        seaGrad.addColorStop(1, '#040914');
+        lhCtx.fillStyle = seaGrad;
+        lhCtx.fillRect(0, horizonY, w, h - horizonY);
+
+        for (let row = 0; row < 5; row++) {
+          const yBase = horizonY + 14 + row * 34;
+          lhCtx.strokeStyle = `rgba(125, 211, 252, ${0.14 - row * 0.02})`;
+          lhCtx.lineWidth = 1.5;
+          lhCtx.beginPath();
+          for (let x = 0; x <= w; x += 24) {
+            const wy = yBase + Math.sin(x * 0.02 + lhWaveTime * (1.2 + row * 0.15) + row) * 4;
+            if (x === 0) lhCtx.moveTo(x, wy);
+            else lhCtx.lineTo(x, wy);
+          }
+          lhCtx.stroke();
+        }
+
+        // 5. Rocky Cliff & Tiny Lighthouse
+        const cx = w * 0.5;
+        const lanternY = h * 0.31;
+        const towerBaseY = h * 0.67;
+
+        // Cliff silhouette
+        lhCtx.fillStyle = '#090d16';
+        lhCtx.beginPath();
+        lhCtx.moveTo(cx - 110, h);
+        lhCtx.lineTo(cx - 65, towerBaseY - 6);
+        lhCtx.lineTo(cx + 68, towerBaseY - 4);
+        lhCtx.lineTo(cx + 125, h);
+        lhCtx.closePath();
+        lhCtx.fill();
+
+        // Lighthouse Striped Tower
+        const bands = 4;
+        const topW = 24, botW = 40;
+        const totalH = towerBaseY - (lanternY + 18);
+        for (let b = 0; b < bands; b++) {
+          const t0 = b / bands;
+          const t1 = (b + 1) / bands;
+          const y0 = (lanternY + 18) + totalH * t0;
+          const y1 = (lanternY + 18) + totalH * t1;
+          const w0 = topW + (botW - topW) * t0;
+          const w1 = topW + (botW - topW) * t1;
+
+          lhCtx.fillStyle = b % 2 === 0 ? towerObj.stripe1 : towerObj.stripe2;
+          lhCtx.beginPath();
+          lhCtx.moveTo(cx - w0 / 2, y0);
+          lhCtx.lineTo(cx + w0 / 2, y0);
+          lhCtx.lineTo(cx + w1 / 2, y1);
+          lhCtx.lineTo(cx - w1 / 2, y1);
+          lhCtx.closePath();
+          lhCtx.fill();
+        }
+
+        // Warm Glowing Window in Tower
+        lhCtx.fillStyle = '#fef08a';
+        lhCtx.fillRect(cx - 4, lanternY + 48, 8, 11);
+
+        // Lantern Room & Roof
+        lhCtx.fillStyle = '#1e293b';
+        lhCtx.fillRect(cx - 16, lanternY + 14, 32, 5);
+        lhCtx.beginPath();
+        lhCtx.moveTo(cx - 16, lanternY - 6);
+        lhCtx.lineTo(cx, lanternY - 22);
+        lhCtx.lineTo(cx + 16, lanternY - 6);
+        lhCtx.closePath();
+        lhCtx.fill();
+
+        // Lantern Glass Core (Brightness depends on Coal + Lens Cleanliness)
+        const beamPower = Math.max(0.15, (lhCoal / 100) * (lhCleanliness / 100));
+        lhCtx.save();
+        lhCtx.fillStyle = `rgba(254, 240, 138, ${0.4 + beamPower * 0.6})`;
+        lhCtx.shadowBlur = 28 * beamPower;
+        lhCtx.shadowColor = '#fde047';
+        lhCtx.fillRect(cx - 12, lanternY - 6, 24, 20);
+        lhCtx.restore();
+
+        // 6. Rotating Sweeping Light Beam
+        const sweepWidth = Math.sin(lhBeamAngle); // -1 to 1
+        const beamLength = (w * 0.55) * (0.45 + beamPower * 0.65);
+        const spread = lensObj.beamSpread * beamLength;
+
+        lhCtx.save();
+        const beamGrad = lhCtx.createLinearGradient(cx, lanternY + 4, cx + sweepWidth * beamLength, lanternY + 40);
+        beamGrad.addColorStop(0, `rgba(254, 249, 195, ${0.48 * beamPower})`);
+        beamGrad.addColorStop(1, 'rgba(254, 249, 195, 0)');
+        lhCtx.fillStyle = beamGrad;
+        lhCtx.beginPath();
+        lhCtx.moveTo(cx, lanternY + 4);
+        lhCtx.lineTo(cx + sweepWidth * beamLength, lanternY + 40 - spread);
+        lhCtx.lineTo(cx + sweepWidth * beamLength, lanternY + 40 + spread);
+        lhCtx.closePath();
+        lhCtx.fill();
+        lhCtx.restore();
+
+        // 7. Foghorn Sound Wave Ring
+        if (lhHornWave > 0) {
+          lhHornWave += 0.022;
+          if (lhHornWave >= 1) {
+            lhHornWave = 0;
+          } else {
+            lhCtx.save();
+            lhCtx.strokeStyle = `rgba(125, 211, 252, ${(1 - lhHornWave) * 0.65})`;
+            lhCtx.lineWidth = 3;
+            lhCtx.beginPath();
+            lhCtx.arc(cx, lanternY + 4, 24 + lhHornWave * (w * 0.65), 0, Math.PI * 2);
+            lhCtx.stroke();
+            lhCtx.restore();
+          }
+        }
+
+        // 8. Fog Veil Overlay
+        if (lhFog > 12) {
+          lhCtx.fillStyle = `rgba(203, 213, 225, ${Math.min(0.55, (lhFog / 100) * 0.58)})`;
+          lhCtx.fillRect(0, horizonY - 45, w, 130);
+        }
+
+        // 9. Rain Effect if Rain Weather Selected
+        if (weatherObj.id === 'rain') {
+          lhCtx.strokeStyle = 'rgba(186, 230, 253, 0.35)';
+          lhCtx.lineWidth = 1.2;
+          lhCtx.beginPath();
+          raindrops.forEach(d => {
+            d.y += d.speed;
+            d.x -= 1.5;
+            if (d.y > h) { d.y = -10; d.x = Math.random() * w; }
+            lhCtx.moveTo(d.x, d.y);
+            lhCtx.lineTo(d.x - 2, d.y + d.len);
+          });
+          lhCtx.stroke();
+        }
+      }
+      requestAnimationFrame(renderLighthouseScene);
+    }
+    requestAnimationFrame(renderLighthouseScene);
+
+    // Lighthouse Shop & Postcards Modals
+    let activeLhShopTab = 'parts';
+
+    function renderLighthouseShop() {
+      const container = document.getElementById('lhShopContent');
+      container.innerHTML = '';
+
+      if (activeLhShopTab === 'parts') {
+        // Lens Upgrade
+        const nextLens = LH_LENSES[state.lhLensLevel + 1];
+        const lensDiv = document.createElement('div');
+        lensDiv.className = 'upgrade-item';
+        lensDiv.innerHTML = `
+          <div><h4>🔍 Линза: ${LH_LENSES[state.lhLensLevel].name}</h4><p>${nextLens ? `След: ${nextLens.name} (меньше соли, шире луч)` : 'Максимальная линза!'}</p></div>
+          <button class="upgrade-btn" style="background:#38bdf8;color:#090d16;" ${!nextLens ? 'disabled' : ''} id="buyLhLensBtn">${nextLens ? `${nextLens.cost} 🔶` : 'МАКС'}</button>
+        `;
+        container.appendChild(lensDiv);
+        if (nextLens) {
+          lensDiv.querySelector('#buyLhLensBtn').addEventListener('click', () => {
+            if (state.lhAmber >= nextLens.cost) {
+              state.lhAmber -= nextLens.cost; state.lhLensLevel++;
+              sound.playSuccess(); saveState(); renderLighthouseHUD(); renderLighthouseShop();
+            } else sound.playClick(200, 0.08);
+          });
+        }
+
+        // Furnace Upgrade
+        const nextFurnace = LH_FURNACES[state.lhFurnaceLevel + 1];
+        const furnDiv = document.createElement('div');
+        furnDiv.className = 'upgrade-item';
+        furnDiv.innerHTML = `
+          <div><h4>🔥 Топка: ${LH_FURNACES[state.lhFurnaceLevel].name}</h4><p>${nextFurnace ? `След: ${nextFurnace.name} (дольше держит жар)` : 'Максимальная топка!'}</p></div>
+          <button class="upgrade-btn" style="background:#38bdf8;color:#090d16;" ${!nextFurnace ? 'disabled' : ''} id="buyLhFurnBtn">${nextFurnace ? `${nextFurnace.cost} 🔶` : 'МАКС'}</button>
+        `;
+        container.appendChild(furnDiv);
+        if (nextFurnace) {
+          furnDiv.querySelector('#buyLhFurnBtn').addEventListener('click', () => {
+            if (state.lhAmber >= nextFurnace.cost) {
+              state.lhAmber -= nextFurnace.cost; state.lhFurnaceLevel++;
+              sound.playSuccess(); saveState(); renderLighthouseHUD(); renderLighthouseShop();
+            } else sound.playClick(200, 0.08);
+          });
+        }
+
+        // Tower Styles
+        LH_TOWERS.forEach(t => {
+          const owned = state.lhUnlockedTowers.includes(t.id);
+          const selected = state.lhTowerStyle === t.id;
+          const div = document.createElement('div');
+          div.className = 'upgrade-item';
+          div.innerHTML = `
+            <div><h4>🏮 Окрас башни: ${t.name}</h4><p>${owned ? (selected ? 'Установлено сейчас' : 'Куплено') : 'Декоративный стиль маяка'}</p></div>
+            <button class="upgrade-btn" style="background:${selected ? '#22c55e' : '#38bdf8'};color:#090d16;" id="tower-${t.id}">
+              ${selected ? 'ВЫБРАНО' : (owned ? 'НАДЕТЬ' : `${t.cost} 🔶`)}
+            </button>
+          `;
+          container.appendChild(div);
+          div.querySelector(`#tower-${t.id}`).addEventListener('click', () => {
+            if (owned) {
+              state.lhTowerStyle = t.id; sound.playClick(620, 0.05); saveState(); renderLighthouseShop();
+            } else if (state.lhAmber >= t.cost) {
+              state.lhAmber -= t.cost; state.lhUnlockedTowers.push(t.id); state.lhTowerStyle = t.id;
+              sound.playSuccess(); saveState(); renderLighthouseHUD(); renderLighthouseShop();
+            } else sound.playClick(200, 0.08);
+          });
+        });
+      } else {
+        // Weather Selector
+        LH_WEATHERS.forEach(w => {
+          const owned = state.lhUnlockedWeathers.includes(w.id);
+          const selected = state.lhWeather === w.id;
+          const div = document.createElement('div');
+          div.className = 'upgrade-item';
+          div.innerHTML = `
+            <div><h4>🌦️ ${w.name}</h4><p>${w.desc}</p></div>
+            <button class="upgrade-btn" style="background:${selected ? '#22c55e' : '#38bdf8'};color:#090d16;" id="weather-${w.id}">
+              ${selected ? 'АКТИВНО' : (owned ? 'ВКЛЮЧИТЬ' : `${w.cost} 🔶`)}
+            </button>
+          `;
+          container.appendChild(div);
+          div.querySelector(`#weather-${w.id}`).addEventListener('click', () => {
+            if (owned) {
+              state.lhWeather = w.id; sound.playClick(620, 0.05); saveState(); renderLighthouseShop();
+            } else if (state.lhAmber >= w.cost) {
+              state.lhAmber -= w.cost; state.lhUnlockedWeathers.push(w.id); state.lhWeather = w.id;
+              sound.playSuccess(); saveState(); renderLighthouseHUD(); renderLighthouseShop();
+            } else sound.playClick(200, 0.08);
+          });
+        });
+      }
+    }
+
+    document.querySelectorAll('.lh-modal-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.lh-modal-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeLhShopTab = tab.dataset.lhTab;
+        renderLighthouseShop();
+      });
+    });
+
+    document.getElementById('lhShopBtn').addEventListener('click', () => {
+      sound.init(); renderLighthouseShop(); document.getElementById('lighthouseShopModal').classList.add('open');
+    });
+
+    document.getElementById('lhPostcardsBtn').addEventListener('click', () => {
+      sound.init();
+      const list = document.getElementById('postcardsList');
+      list.innerHTML = '';
+      if (state.lhPostcards.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:#94a3b8;font-size:13px;padding:18px 0;">Пока нет открыток. Проведите первый корабль мимо скалы, чтобы получить письмо от капитана!</p>';
+      } else {
+        LIGHTHOUSE_POSTCARDS.filter(c => state.lhPostcards.includes(c.id)).forEach(card => {
+          const item = document.createElement('div');
+          item.className = 'postcard-item';
+          item.innerHTML = `
+            <div class="postcard-stamp">${card.icon}</div>
+            <div class="postcard-body">
+              <h4>${card.title}</h4>
+              <p>${card.text}</p>
+              <div class="postcard-meta">${card.meta}</div>
+            </div>
+          `;
+          list.appendChild(item);
+        });
+      }
+      document.getElementById('postcardsModal').classList.add('open');
+    });
+
+    /* =========================================================================
+       7. SHARED NAVIGATION, VISUAL THEME & AUDIO TOGGLES
        ========================================================================= */
     document.querySelectorAll('.mode-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        sound.init();
-        sound.playClick(560, 0.04);
+        sound.init(); sound.playClick(560, 0.04);
         const mode = tab.dataset.mode;
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         document.querySelectorAll('.mode-view').forEach(v => v.classList.remove('active'));
         document.getElementById(`view-${mode}`).classList.add('active');
-
         if (mode === 'electrician') renderElectricianUI();
         if (mode === 'arcade') { updateArcadeHUD(); renderArcadeStrip(); }
       });
@@ -2529,25 +3251,22 @@
     function applyVisualTheme(themeName) {
       state.theme = themeName;
       document.body.dataset.theme = themeName;
-      document.querySelectorAll('.theme-option').forEach(opt => {
-        opt.classList.toggle('active', opt.dataset.setTheme === themeName);
-      });
+      document.querySelectorAll('.theme-option').forEach(opt => opt.classList.toggle('active', opt.dataset.setTheme === themeName));
       saveState();
     }
 
     document.querySelectorAll('.theme-option').forEach(opt => {
-      opt.addEventListener('click', () => {
-        sound.init();
-        sound.playClick(680, 0.05);
-        applyVisualTheme(opt.dataset.setTheme);
-      });
+      opt.addEventListener('click', () => { sound.init(); sound.playClick(680, 0.05); applyVisualTheme(opt.dataset.setTheme); });
     });
 
-    function syncSettingsToggles() {
+    function syncAllAudioButtons() {
       sound.enabled = state.soundEnabled;
-      if (!state.soundEnabled) sound.updateHum(0);
+      sound.updateAmbience();
+      const icon = state.soundEnabled ? '🔊' : '🔇';
+      document.getElementById('hubSoundBtn').textContent = icon;
+      document.getElementById('soundToggleBtn').textContent = icon;
+      document.getElementById('lhSoundBtn').textContent = icon;
 
-      document.getElementById('soundToggleBtn').textContent = state.soundEnabled ? '🔊' : '🔇';
       const mSound = document.getElementById('modalSoundToggle');
       mSound.textContent = state.soundEnabled ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО';
       mSound.classList.toggle('off', !state.soundEnabled);
@@ -2557,58 +3276,48 @@
       mShake.classList.toggle('off', !state.shakeEnabled);
     }
 
-    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+    function toggleSoundGlobal() {
       sound.init();
       state.soundEnabled = !state.soundEnabled;
       if (state.soundEnabled) sound.playClick(640, 0.05);
-      syncSettingsToggles();
+      syncAllAudioButtons();
       saveState();
-    });
+    }
 
-    document.getElementById('modalSoundToggle').addEventListener('click', () => {
-      sound.init();
-      state.soundEnabled = !state.soundEnabled;
-      if (state.soundEnabled) sound.playClick(640, 0.05);
-      syncSettingsToggles();
-      saveState();
-    });
+    document.getElementById('hubSoundBtn').addEventListener('click', toggleSoundGlobal);
+    document.getElementById('soundToggleBtn').addEventListener('click', toggleSoundGlobal);
+    document.getElementById('lhSoundBtn').addEventListener('click', toggleSoundGlobal);
+    document.getElementById('modalSoundToggle').addEventListener('click', toggleSoundGlobal);
 
     document.getElementById('modalShakeToggle').addEventListener('click', () => {
       state.shakeEnabled = !state.shakeEnabled;
-      syncSettingsToggles();
+      syncAllAudioButtons();
       if (state.shakeEnabled) triggerHaptic([25]);
       saveState();
     });
 
     document.getElementById('visualModalBtn').addEventListener('click', () => {
-      sound.init();
-      sound.playClick(540, 0.04);
-      document.getElementById('visualModal').classList.add('open');
+      sound.init(); document.getElementById('visualModal').classList.add('open');
     });
 
     document.querySelectorAll('.close-modal').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById(btn.dataset.close).classList.remove('open');
-      });
+      btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.remove('open'));
     });
 
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) backdrop.classList.remove('open');
-      });
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) backdrop.classList.remove('open'); });
     });
 
-    // Animated 50Hz sine wave in Blueprint/Neon themes
+    // Oscilloscope animation for Socket Simulator
     let wavePhase = 0;
     function animateOscilloscope() {
       wavePhase += 0.14;
       const path = document.getElementById('sineWavePath');
-      if (path) {
+      if (path && currentScreen === 'socket') {
         let d = 'M 0 60 ';
         for (let x = 0; x <= 280; x += 14) {
           const amp = (isPluggedIn && !isTripped) ? 38 : 14;
-          const y = 60 + Math.sin(x * 0.045 + wavePhase) * amp;
-          d += `L ${x} ${y.toFixed(1)} `;
+          d += `L ${x} ${(60 + Math.sin(x * 0.045 + wavePhase) * amp).toFixed(1)} `;
         }
         path.setAttribute('d', d);
       }
@@ -2616,17 +3325,13 @@
     }
     requestAnimationFrame(animateOscilloscope);
 
-    // Boot application
-    function renderAll() {
-      applyVisualTheme(state.theme);
-      syncSettingsToggles();
-      renderSandboxUI();
-      renderElectricianUI();
-      updateArcadeHUD();
-      renderArcadeStrip();
-    }
+    setInterval(saveState, 4000);
 
-    renderAll();
+    // Boot
+    syncAllAudioButtons();
+    updateHubStats();
+    renderSandboxUI();
+    renderLighthouseHUD();
   </script>
 </body>
 </html>
